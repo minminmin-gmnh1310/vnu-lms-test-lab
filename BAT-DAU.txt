@@ -1,4 +1,4 @@
-VNU LMS Test Lab 1.0.1 — máy ảo GitHub Actions
+VNU LMS Test Lab 1.0.2 — máy ảo GitHub Actions
 
 ĐỌC README.md để làm từng bước. Không cần cài máy ảo Windows vào laptop.
 
@@ -12,10 +12,13 @@ VNU LMS Test Lab 1.0.1 — máy ảo GitHub Actions
 
 Bản lab không kết nối VNU, không cần đăng nhập, không tăng thời gian học thật.
 Yêu cầu bài mô phỏng chỉ 1.5 giây; video kiểm thử 4 giây, phát native 1x.
-304 ca Node/DOM/server đã kiểm tra tại môi trường xây dựng, khoảng 8 giây.
+307 ca logic/server/thiết lập đã đạt trong môi trường xây dựng.
 Bản 1.0.0 đã chạy trên GitHub: 304 test logic đạt, pipeline 7/7 đạt,
 controls timeout khi chờ tab ẩn vì test chưa tắt focus emulation của Playwright.
-Bản 1.0.1 sửa thiết lập đó và tách thành 3 kịch bản pipeline/controls/visibility.
+Bản 1.0.1 đã chạy lại: pipeline và controls đạt, visibility vẫn timeout.
+Nguyên nhân thiếu: phiên CDP mới không thu hồi capture handle của phiên gốc.
+Bản 1.0.2 dùng noDefaults từ phiên kết nối ĐẦU TIÊN cho visibility,
+kiểm tra cùng windowId và bỏ ghi hình riêng kịch bản này.
 Ba kịch bản cập nhật CHƯA được chạy lại; bốn file JS của tool giữ nguyên.
 
 ĐÃ CÓ REPO: Chép đè nội dung ZIP vào repo cũ, giữ thư mục .git.

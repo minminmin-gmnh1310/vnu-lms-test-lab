@@ -4,6 +4,7 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
 const {startServer}=require('./server.cjs');
+const {launchNativeBrowser}=require('./native-browser.cjs');
 const root=path.join(__dirname,'..'),results=path.join(root,'results');fs.mkdirSync(results,{recursive:true});
 const scripts=['controller.js','lms.js','queue.js','player.js'];
 const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
@@ -28,7 +29,7 @@ async function main(){
  const extension=path.join(work,'extension');fs.mkdirSync(extension);
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'vnu-lms-player','manifest.json'),'utf8'));
  const report={mode:'REAL CHROMIUM + LOCAL MOCK LMS',vnuServerTested:false,windowsEdgeTested:false,environment:{os:process.platform,node:process.version},startedAt:new Date().toISOString(),runtimeVersion:manifest.version,
-  labVersion:'1.0.1',requirementsSeconds:1.5,browser:null,runtimeHashes:{},cases:[],setupError:null};
+  labVersion:'1.0.2',requirementsSeconds:1.5,browser:null,runtimeHashes:{},cases:[],setupError:null};
  try {
   for(const name of scripts){const source=path.join(root,'vnu-lms-player',name);fs.copyFileSync(source,path.join(extension,name));report.runtimeHashes[name]=hash(source);assert.equal(hash(source),hash(path.join(extension,name)));}
   // Chromium match patterns use host names without ports; network routing
@@ -70,15 +71,18 @@ async function main(){
       visibility:document.visibilityState,hidden:document.hidden,at:Date.now()}));
     });
     const other=await context.newPage();await other.goto(lab.origin+'/frame');
-    // Playwright 1.64.1 enables focus emulation on each page. Disable that
-    // test-runner override so Chromium itself reports real tab visibility.
-    // Do not overwrite document.hidden/visibilityState or synthesize events.
-    const sessions=[];
-    await step(entry,'disable Playwright forced focus on both pages',async()=>{
+    // noDefaults was enabled on the FIRST connection, before either page.
+    // Merely disabling emulation from a second CDP session cannot release the
+    // original session's keep-visible capture handle (Chromium EmulationHandler).
+    await step(entry,'both pages belong to the same native browser window',async()=>{
+     entry.windows=[];
      for(const target of [page,other]){
-      const session=await context.newCDPSession(target);sessions.push(session);
-      await session.send('Emulation.setFocusEmulationEnabled',{enabled:false});
+      const session=await context.newCDPSession(target);
+      const {targetInfo}=await session.send('Target.getTargetInfo');
+      const {windowId}=await session.send('Browser.getWindowForTarget',{targetId:targetInfo.targetId});
+      entry.windows.push({url:target.url(),windowId});await session.detach();
      }
+     assert.equal(entry.windows[0].windowId,entry.windows[1].windowId,'Visibility test requires two tabs in ONE window');
     });
     await page.bringToFront();
     await page.waitForFunction(()=>document.visibilityState==='visible',null,{polling:100,timeout:10000});
@@ -104,13 +108,18 @@ async function main(){
    }]
   ];
   for(const [name,scenario,action] of cases){
-   let context=null,page=null;const logs=[],entry={name,scenario,status:'running',steps:[],startedAt:new Date().toISOString()};report.cases.push(entry);
+   let context=null,page=null,native=null;const logs=[],entry={name,scenario,status:'running',steps:[],startedAt:new Date().toISOString()};report.cases.push(entry);
    try {
-    context=await chromium.launchPersistentContext(path.join(work,'profile-'+name),{channel:'chromium',headless:false,
+    if(name==='visibility'){
+     native=await launchNativeBrowser(chromium,{profile:path.join(work,'profile-'+name),extension,
+      logPath:path.join(results,'visibility-browser.log'),artifactsDir:results});
+     context=native.context;entry.browserSetup={noDefaults:true,recordVideo:false,traceScreenshots:false};
+    }else context=await chromium.launchPersistentContext(path.join(work,'profile-'+name),{channel:'chromium',headless:false,
      args:['--disable-extensions-except='+extension,'--load-extension='+extension],viewport:{width:1280,height:900},recordVideo:{dir:path.join(results,'videos',name),size:{width:960,height:675}}});
     report.browser=context.browser()?.version()||'Chromium persistent context';
     await context.route('**/*',route=>{const url=new URL(route.request().url());return url.origin===lab.origin||url.protocol==='chrome-extension:'?route.continue():route.abort();});
-    await context.tracing.start({screenshots:true,snapshots:true,sources:true});page=context.pages()[0]||await context.newPage();
+    await context.tracing.start({screenshots:name!=='visibility',snapshots:true,sources:true});page=context.pages()[0]||await context.newPage();
+    if(native)await page.setViewportSize({width:1280,height:900});
     page.on('console',m=>logs.push({type:m.type(),text:m.text()}));page.on('pageerror',e=>logs.push({type:'pageerror',text:e.message}));
     await page.goto(lab.origin+lab.coursePath+'?scenario='+scenario);await page.locator('#lab-banner').waitFor();
     assert.match(await page.locator('#lab-banner').innerText(),/MÔ PHỎNG/);
@@ -125,7 +134,8 @@ async function main(){
     entry.finishedAt=new Date().toISOString();fs.writeFileSync(path.join(results,name+'-console.json'),JSON.stringify(logs,null,2));
     // Capture states above BEFORE foregrounding a failed/background page.
     if(page){await page.bringToFront().catch(()=>{});await page.screenshot({path:path.join(results,name+'.png'),fullPage:true,timeout:10000}).catch(()=>{});}
-    if(context){await context.tracing.stop({path:path.join(results,name+'-trace.zip')}).catch(()=>{});await context.close().catch(()=>{});}
+    if(context){await context.tracing.stop({path:path.join(results,name+'-trace.zip')}).catch(()=>{});if(!native)await context.close().catch(()=>{});}
+    if(native)await native.close();
     console.log(name+': '+entry.status+(entry.error?'\n'+entry.error:''));
    }
   }

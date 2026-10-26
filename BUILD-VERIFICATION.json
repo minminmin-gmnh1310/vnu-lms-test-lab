@@ -3,14 +3,14 @@
     "kind": "Node/DOM and mock-server tests",
     "realVnuServerTested": false,
     "exitCode": 0,
-    "tests": 304,
-    "pass": 304,
+    "tests": 307,
+    "pass": 307,
     "fail": 0,
     "skipped": 0,
     "cancelled": 0
   },
-  "browserScenarios": "UPDATED SCENARIOS NOT RUN; user CI 1.0.0 pipeline PASSED, controls FAILED at visibility prerequisite",
-  "githubWorkflow": "User-supplied CI artifact inspected; updated workflow NOT TRIGGERED",
+  "browserScenarios": "UPDATED 1.0.2 SCENARIOS NOT RUN; supplied CI 1.0.1 pipeline and controls PASSED, visibility prerequisite FAILED",
+  "githubWorkflow": "Updated workflow NOT TRIGGERED",
   "realVnuServerTested": false,
   "runtimeVersion": "0.8.2",
   "runtimeHashes": {
@@ -21,16 +21,16 @@
   },
   "shortLessonRequiredSeconds": 1.5,
   "videoClipSeconds": 4,
-  "labVersion": "1.0.1",
+  "labVersion": "1.0.2",
   "previousCi": {
-    "artifact": "VNU-LMS-test-results.zip",
-    "browser": "156.0.8078.4",
+    "artifact": "VNU-LMS-test-results (1).zip",
+    "labVersion": "1.0.1",
     "os": "linux",
-    "node": "v24.21.0",
-    "startedAt": "2026-10-26T03:01:35.988Z",
+    "browser": "156.0.8078.4",
     "unitPassed": 304,
-    "pipeline": "passed, 7/7 required, visits [2,3,4,5,6,7], submissions 0",
-    "controls": "failed: visibilityState did not become hidden within 10s",
-    "fix": "Disable Playwright focus emulation in separate visibility scenario; original runtime scripts unchanged"
+    "pipeline": "passed; 7/7; visits [2,3,4,5,6,7]; submissions 0",
+    "controls": "all 3 steps passed",
+    "visibility": "failed; original page visible, hidden=false, focused=false, events=[]",
+    "fix": "connectOverCDP noDefaults on FIRST session of a fresh browser; verify same windowId; no continuous capture for visibility"
   }
 }

@@ -1,4 +1,4 @@
-# VNU LMS Test Lab 1.0.1
+# VNU LMS Test Lab 1.0.2
 
 Bộ kiểm thử riêng cho **VNU LMS Player 0.8.2**, chạy trên máy ảo GitHub Actions.
 Bạn không cần mở laptop suốt lượt chạy và không cần đưa tài khoản VNU vào máy ảo.
@@ -7,7 +7,7 @@ Bạn không cần mở laptop suốt lượt chạy và không cần đưa tài
 
 Hai cách rút thời gian trong lab:
 
-- **304 ca Node/DOM/server:** dùng đồng hồ và dữ liệu mô phỏng; tình huống chờ nhiều phút được thử trong khoảng 8 giây ở môi trường xây dựng.
+- **307 ca Node/DOM/server và thiết lập trình duyệt:** gồm 304 ca trước đây và 3 ca kiểm tra khởi động/kết nối/dọn tiến trình bằng process giả. Các ca mới không chạy trình duyệt. Tình huống chờ nhiều phút được thử nhanh bằng đồng hồ và dữ liệu mô phỏng.
 - **Trình duyệt thật:** nạp bốn tệp JavaScript gốc của tool, chạy với video WebM tự tạo dài 4 giây và bài mô phỏng chỉ yêu cầu **1.5 giây**. Video vẫn phát native ở 1x. Không tăng tốc thời gian hoặc sửa yêu cầu của LMS VNU.
 
 Máy ảo không làm đồng hồ trên server trường chạy nhanh hơn. Muốn xác minh VNU lưu phút thật vẫn cần một lượt kiểm tra trên VNU theo thời gian thật.
@@ -52,7 +52,7 @@ Các lựa chọn:
 
 | Lựa chọn | Mục đích |
 | --- | --- |
-| `unit` | 295 ca của tool + 9 ca server mô phỏng; không tải trình duyệt |
+| `unit` | 295 ca của tool + 9 ca server + 3 ca thiết lập; không tải trình duyệt |
 | `browser` | Ba kịch bản trình duyệt thật, không chạy lại bộ unit |
 | `all` | Chạy cả hai tầng; dùng cho lượt đầu |
 | `ubuntu-latest` | Máy ảo Ubuntu, Chromium có desktop ảo để kiểm tra đổi tab |
@@ -72,7 +72,8 @@ Mở lượt chạy đã xong, ở phần **Artifacts** tải `VNU-LMS-test-resu
 | `unit.log` | Chi tiết ca nào thất bại |
 | `browser-summary.json` | Kịch bản trình duyệt, lỗi setup hoặc lỗi test, OS/browser và hash mã gốc |
 | `pipeline.png`, `controls.png`, `visibility.png` | Ảnh kết thúc/thất bại của trang mô phỏng |
-| `videos/` | Video do Playwright ghi trong lúc chạy |
+| `videos/` | Video của pipeline/controls; visibility dùng nhật ký và trace không ghi hình |
+| `visibility-browser.log` | Chẩn đoán khởi động trình duyệt riêng cho visibility |
 | `*-console.json`, `*-trace.zip` | Console và trace để phân tích lỗi |
 
 Gửi lại ZIP kết quả, không chỉ ảnh dấu tích xanh. Nếu lỗi xảy ra trước khi có artifact, gửi tên bước bị đỏ và phần log lỗi của bước đó.
@@ -83,7 +84,9 @@ Kịch bản `pipeline`: bỏ mục tùy chọn và mục đã hoàn thành; qua
 
 Kịch bản `controls`: video native 1x; resize sang cửa sổ hẹp; Pause/Play bằng bàn phím; Dừng và Bắt đầu lại. Từng bước có kết quả riêng trong báo cáo.
 
-Kịch bản `visibility`: tắt chế độ focus emulation mà Playwright tự bật trên cả hai trang, rồi đổi tab thật; bắt buộc quan sát `document.visibilityState` chuyển sang `hidden`, video dừng và phát tiếp khi quay lại. Không gán lại thuộc tính visibility, không tự phát sự kiện giả. Nếu không tạo được trạng thái ẩn, test vẫn thất bại và lưu trạng thái các trang; không bỏ qua hoặc tính là đạt.
+Kịch bản `visibility`: khởi động một Chromium mới với profile lab riêng và kết nối bằng `connectOverCDP({noDefaults:true})` ngay từ phiên đầu tiên, để Playwright không bật focus emulation. Chỉ dùng default context của trình duyệt đó. Kiểm tra hai trang thuộc cùng một cửa sổ bằng windowId, rồi đổi tab thật; bắt buộc quan sát `document.visibilityState` chuyển sang `hidden`, video dừng và phát tiếp khi quay lại. Không gán lại thuộc tính visibility, không tự phát sự kiện giả. Nếu không tạo được trạng thái ẩn, test vẫn thất bại và lưu trạng thái các trang; không bỏ qua hoặc tính là đạt. Tắt ghi video và ảnh trace định kỳ riêng kịch bản này để giảm tác động của công cụ quan sát. Vẫn giữ DOM/network trace, sự kiện visibility và ảnh sau khi kiểm tra kết thúc.
+
+Lý do không dùng cách tắt từ phiên CDP mới của bản 1.0.1: Chromium giữ capture handle theo từng EmulationHandler. Lệnh false trên phiên mới không thu hồi handle của phiên Playwright đã gửi true trước đó. Bằng chứng lần chạy: trang mất focus nhưng vẫn visible, không phát sự kiện visibilitychange. Tùy chọn noDefaults ngăn lệnh true ngay từ đầu. Không sửa Playwright hoặc mã runtime của tiện ích.
 
 Ba kịch bản chạy độc lập trong các profile riêng. `controls` và `visibility` dùng cùng dữ liệu video kiểm tra của server mô phỏng; trạng thái server được giữ trong một lượt lab.
 
@@ -98,19 +101,20 @@ Runtime JavaScript được giữ nguyên. Lab tạo bản sao manifest chỉ ch
 
 ### Trạng thái xác minh khi giao gói
 
-- Đã chạy **304/304 ca Node/DOM/server** và kiểm tra cú pháp mã lab.
+- Đã chạy **307/307 ca Node/DOM/server và thiết lập** và kiểm tra cú pháp mã lab.
 - Đã kiểm tra mô hình server và dữ liệu media, cấu trúc workflow, bản sao mã gốc.
 - Kết quả GitHub Actions do người dùng gửi ngày 26/10/2026, với bản lab 1.0.0: **304/304** test logic đạt; `pipeline` đạt đủ 7/7, lượt ghé `[2,3,4,5,6,7]`, không nộp biểu mẫu; `controls` dừng ở bước chờ tab ẩn. Trace xác nhận đã gọi `bringToFront` trước khi timeout. Bản Playwright 1.64.1 cài trong lab có lệnh bật focus emulation mặc định; thiết lập test cũ chưa tắt nó.
-- Bản 1.0.1 sửa thiết lập test nêu trên và tách `visibility` khỏi `controls`. Bốn tệp JavaScript gốc của tool không thay đổi.
-- **Chưa chạy lại ba kịch bản Chromium của bản 1.0.1.** Cần đẩy bản cập nhật lên GitHub rồi chọn Run workflow mới, `suite=all`. Không dùng Re-run của lượt cũ vì lượt đó giữ commit cũ.
+- Kết quả GitHub của bản 1.0.1 do người dùng gửi: **304/304**, `pipeline` và cả ba bước `controls` đạt; `visibility` vẫn lỗi vì trang visible dù focused=false, không có sự kiện visibility. Hai kịch bản đạt chạy trên Linux, Chromium 156.0.8078.4. Chưa xác minh Microsoft Edge/Windows hoặc server VNU.
+- Bản 1.0.2 sửa cách kết nối đầu tiên nêu trên; bốn tệp JavaScript gốc của tool không thay đổi.
+- **Chưa chạy lại ba kịch bản Chromium của bản 1.0.2.** Cần đẩy bản cập nhật lên GitHub rồi chọn Run workflow mới, `suite=all`. Không dùng Re-run của lượt cũ vì lượt đó giữ commit cũ.
 
 ### Cập nhật repository đã tạo
 
-Giải nén gói 1.0.1 và chép đè nội dung vào thư mục repo cũ (giữ thư mục `.git`). Mở PowerShell trong repo rồi chạy:
+Giải nén gói 1.0.2 và chép đè nội dung vào thư mục repo cũ (giữ thư mục `.git`). Mở PowerShell trong repo rồi chạy:
 
 ```powershell
-git add lab/browser.cjs package.json package-lock.json README.md BAT-DAU.txt BUILD-VERIFICATION.json
-git commit -m "Fix browser visibility test setup"
+git add lab package.json package-lock.json README.md BAT-DAU.txt BUILD-VERIFICATION.json
+git commit -m "Use native visibility without initial focus emulation"
 git push
 ```
 
@@ -135,5 +139,7 @@ Trên Linux cần desktop hoặc Xvfb; workflow đã chuẩn bị lệnh `xvfb-r
 - [Chạy workflow thủ công](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
 - [Hạn mức GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
 - [Kiểm thử tiện ích với Chromium của Playwright](https://playwright.dev/docs/chrome-extensions)
+- [Playwright connectOverCDP noDefaults](https://playwright.dev/docs/api/class-browsertype#browser-type-connect-over-cdp-option-no-defaults)
+- [Chromium EmulationHandler: SetFocusEmulationEnabled](https://chromium.googlesource.com/chromium/src/+/139.0.7258.66/content/browser/devtools/protocol/emulation_handler.cc)
 
 Playwright hiện hướng dẫn dùng Chromium đi kèm để side-load tiện ích; không mặc định các cờ side-load còn hoạt động trên Chrome/Edge bản người dùng.

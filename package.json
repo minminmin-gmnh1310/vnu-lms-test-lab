@@ -1,12 +1,12 @@
 {
   "name": "vnu-lms-isolated-test-lab",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Offline fixtures only; never connects to VNU or requests credentials",
   "scripts": {
     "test": "node lab/unit.cjs",
     "test:browser": "node lab/browser.cjs",
-    "check": "node --check lab/server.cjs && node --check lab/browser.cjs && node --check lab/page.js && node --check lab/unit.cjs"
+    "check": "node --check lab/server.cjs && node --check lab/browser.cjs && node --check lab/page.js && node --check lab/unit.cjs && node --check lab/native-browser.cjs && node --check lab/native-browser.test.cjs"
   },
   "engines": {"node": ">=20"},
   "devDependencies": {"playwright": "1.64.1", "linkedom": "0.18.13"}
