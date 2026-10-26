@@ -1,0 +1,180 @@
+VNU LMS — Nội dung bắt buộc 0.8.2 (bản thử nghiệm)
+
+SỬA LỖI 0.8.2
+- Khi lấy mẫu bị gián đoạn hơn 5 giây, bộ đếm tại máy không cộng bù khoảng
+  đó, nhưng vẫn có lịch dự phòng để đọc lại tiến trình LMS khi được phép chạy.
+- Chữ/bộ đếm động trong cùng bài đọc không làm mất mẫu thời gian liên tục.
+  Tiêu đề, vùng nội dung và nguồn nhúng vẫn phải được xác minh đúng.
+- Video tên như Bài 1: Tổng quan... được nhận từ trình phát native, tiêu đề
+  viewer, mục chọn và nguồn thực tế; không bắt buộc tên phải bắt đầu bằng Video.
+- Iframe hoặc ô nhập tự nhận focus không còn bị coi là bạn đang trả lời.
+  Nút Giữ biểu mẫu và thao tác nhập/change thật vẫn bảo vệ bản nháp.
+- Trình phát biến mất khi chờ Play: cho 3 giây phục hồi khi tab được phép
+  chạy; nếu vẫn thiếu thì báo lỗi/ghi còn tồn theo chế độ đang chọn.
+- Lịch dự phòng và khoảng chờ không tự cộng phút hoặc đánh dấu hoàn thành.
+
+CẬP NHẬT TRÊN EDGE / WINDOWS
+1. Bấm Dừng trên bảng tool cũ.
+2. Giải nén VNU-LMS-Player.zip, thay toàn bộ thư mục tiện ích bằng thư mục
+   vnu-lms-player mới chứa manifest.json. Không trộn tệp của hai bản.
+3. Mở edge://extensions, bấm Reload / Tải lại của tiện ích.
+4. F5 tab LMS. Bảng phải ghi VNU · Nội dung bắt buộc 0.8.2.
+Nếu vẫn thấy số bản cũ, xóa tiện ích cũ và Load unpacked lại đúng thư mục mới.
+Nếu có nhiều bản tiện ích VNU LMS, chỉ giữ một bản hoạt động.
+Cài mới: bật Developer mode ở edge://extensions, chọn Load unpacked rồi chọn
+thư mục vnu-lms-player. Đăng nhập VNU như bình thường; không nhập tài khoản vào tool.
+
+LUỒNG CHẠY LIÊN TỤC
+Bốn lựa chọn mặc định bật: Tự chạy khi mở lớp; Chạy liên tục, ghi lại mục chưa
+xong; Thử tắt tiếng nếu bị chặn tự phát; Chia màn hình: chạy khi tab LMS còn
+hiển thị. Mở Tùy chọn chạy để đổi. Các lựa chọn được lưu trên hồ sơ Edge.
+Tool đọc bảng Tiến trình học tập 7 cột, nhận sao đỏ từ content-required của LMS
+và chọn nội dung theo thứ tự trong bảng, gồm thông báo, bài đọc, tài liệu,
+video, khảo sát, thảo luận và bài kiểm tra. Bỏ qua mục tùy chọn và mục đã hoàn thành.
+
+Với nội dung có ngưỡng phút đọc được:
+1. Mở đúng mục sao đỏ chưa hoàn thành đầu tiên; mở nhóm menu thu gọn nếu cần.
+2. Xác minh đúng tiêu đề và vùng nội dung trước khi theo dõi thời gian tại máy.
+3. Phát video native ở 1×, hoặc theo dõi vùng nội dung đang hiển thị theo chế độ đã chọn.
+4. Tự mở Tiến trình để đọc phút và trạng thái mới, rồi quay lại Nội dung.
+5. Nếu LMS báo Đã hoàn thành, chọn mục tiếp theo. Nếu có lỗi hoặc LMS vẫn
+   chưa xác nhận sau các lần kiểm tra giới hạn, ghi mục vào Mục còn tồn và tiếp
+   tục nội dung khả dụng khác. Việc chuyển này không làm mục cũ thành hoàn thành.
+6. Cuối lượt, chờ 15 giây khi tab được phép tiếp tục theo chế độ, rồi thử lại
+   một lượt các mục lỗi có thể phục hồi. Sau đó dừng, báo rõ mục còn tồn hoặc tất cả sao đỏ đã được LMS xác nhận.
+
+Bản 0.7.1 mặc định dừng để chờ người dùng ngay khi tới khảo sát. Bản 0.8.2 tự
+kiểm tra mục đó theo ngưỡng phút. Nếu LMS chỉ yêu cầu thời gian và xác nhận đủ,
+luồng có thể tự tiếp tục. Nếu còn yêu cầu trả lời/nộp bài, mục được giữ trong
+Mục còn tồn. Tool không trả lời, chọn đáp án, bấm nộp hoặc sửa trạng thái LMS.
+
+VÍ DỤ TỪ TRANG BẠN CUNG CẤP
+Sau các thông báo/bài đọc đầu môn và ba video giới thiệu đã hoàn thành, tool
+mở Phiếu khảo sát trước khi bắt đầu học phần, có yêu cầu 2:00.
+Khi LMS xác nhận khảo sát hoàn thành, tool mở 1.1 Thông tin về bài học, rồi
+Video 1: Khái niệm, đặc trưng, vai trò của nhà nước, nếu đó là các mục còn thiếu.
+Nếu khảo sát vẫn chưa hoàn thành, tool ghi lại lý do và tiếp tục những mục sau
+có thể mở. Mục còn tồn vẫn nằm trong tổng sao đỏ và không được cộng là đã xong.
+
+KIỂM TRA THỜI GIAN VÀ THỬ LẠI
+Bình thường tự đọc lại sau mỗi 60 giây phát/hiển thị quan sát được, sớm hơn
+khi gần ngưỡng. Nếu mất mẫu vì khoảng gián đoạn dài, lịch dự phòng vẫn yêu cầu
+đọc LMS khi đúng nội dung còn được mở và tool được phép chạy. Video cần đang
+phát và tiến thêm; Pause hoặc tab không được phép chạy vẫn được tôn trọng. Khi ước tính đã đủ nhưng LMS chưa xác nhận, theo dõi thêm 30 giây
+trước lần đọc tiếp; tránh liên tục đổi tab quá nhanh.
+- Sau ít nhất 3 lần tự đọc, LMS không ghi tăng và thời gian quan sát hoặc
+  khoảng chờ có nội dung hợp lệ đã đạt ngưỡng còn thiếu: ghi còn tồn, tiếp tục
+  mục khác rồi thử lại một lượt. Khoảng chờ chỉ là giới hạn phục hồi, không
+  phải số phút đã xem hoặc được server xác nhận. Không tự cộng số phút LMS.
+- Sau 3 lần kiểm tra vẫn Chưa hoàn thành dù phút LMS đã đủ: ghi còn tồn cần
+  xử lý, không lặp vô hạn chỉ để cộng thêm phút.
+- Không đọc được số phút sau 3 lần kiểm tra: ghi còn tồn, thử lại một lượt.
+- Ngưỡng phút không rõ: mở đúng nội dung rồi ghi còn tồn để bạn kiểm tra điều kiện.
+- Bài bị khóa, thiếu liên kết, viewer trống, video lỗi/đứng hoặc nguồn không khớp:
+  tiếp tục mục khác, rồi thử lại một lượt nếu có thể phục hồi.
+- Trạng thái không rõ hoặc trùng cả tên lẫn mục chứa: ghi còn tồn, không chọn
+  tùy tiện. Có thể được xét lại khi báo cáo mới xác định rõ trạng thái/định danh.
+- Bảng tiến trình không tải: thử mở lại tab tiến trình tối đa 2 lần. Không đọc
+  được cả bảng, tab lớp hoặc hết phiên đăng nhập thì dừng để báo lỗi chung.
+Các giới hạn trên áp dụng khi bật Chạy liên tục. Tắt lựa chọn này trở về luồng
+chờ thao tác ở khảo sát và dừng khi lỗi; các mục đã ghi còn tồn vẫn được hiển thị.
+
+CHIA ĐÔI / THU NHỎ KÍCH THƯỚC CỬA SỔ
+Dùng Win + mũi tên trái/phải để đặt Edge ở một nửa màn hình, giữ tab LMS đang
+được chọn trong cửa sổ Edge đó. Có thể đặt ứng dụng khác ở nửa còn lại.
+Mở Tùy chọn chạy: Chia màn hình: chạy khi tab LMS còn hiển thị mặc định bật.
+- Cửa sổ LMS còn hiện nhưng bạn click cửa sổ bên cạnh: tool tiếp tục phát và
+  theo dõi, không bắt buộc document.hasFocus() phải true.
+- Thay đổi kích thước/phóng to lại: giữ bài đang mở, vị trí video và tổng bộ đếm.
+- Cửa sổ rộng không quá 1100 CSS px hoặc cao không quá 650 CSS px: bảng gọn
+  280 px, nằm góc dưới; Tùy chọn chạy đóng để tiết kiệm chỗ. Bảng có giới hạn
+  theo chiều rộng/cao viewport và cuộn được; nút điều khiển bám đáy vùng cuộn.
+- Nếu video/bài đọc bị bố cục hẹp đẩy hẳn ngoài khung, tool cuộn tới nội dung
+  khi mở bài hoặc resize. Không tự cuộn biểu mẫu đang được giữ để trả lời.
+- Đổi tab, thu nhỏ xuống thanh tác vụ hoặc trình duyệt báo trang hidden: tạm
+  dừng. Kích thước nửa màn hình khác với trạng thái tab bị ẩn.
+- Bỏ chọn Chia màn hình để trở về yêu cầu LMS có focus; click sang cửa sổ khác
+  sẽ tạm dừng. Có thể dùng lựa chọn này nếu LMS chỉ ghi phút khi có focus thật.
+Tool không giả focus, thay đổi visibilityState, gọi API ghi phút hoặc sửa trạng
+thái LMS. Page Visibility chỉ là tín hiệu trình duyệt cung cấp; không chứng minh
+bạn đã đọc hoặc biết chắc mức che khuất bởi mọi cửa sổ của hệ điều hành.
+Nếu LMS không ghi phút khi cửa sổ khác được chọn, bộ đếm tại máy có thể tăng
+nhưng bảng LMS giữ nguyên. Mục đó vẫn chưa hoàn thành và có thể vào Mục còn tồn.
+Kiểm tra phút LMS sau lần đọc mới; nếu không tăng, chọn lại cửa sổ LMS hoặc tắt
+chế độ chia màn hình. Kiểm tra trang hiện kích thước, hiển thị và focus thật.
+Các kích thước/focus trong kiểm thử là mô phỏng; chưa kiểm chứng Windows Snap
+hoặc khả năng ghi phút trên tài khoản VNU thật.
+
+VIDEO VÀ CHẶN TỰ PHÁT
+Video native phát 1×, giữ vị trí LMS khôi phục; không tua tới cuối và không lấy
+phút truy cập làm vị trí video. Tool vẫn kiểm tra đúng nguồn đã tải trước khi phát.
+Khi bị chặn tự phát và bật cả Chạy liên tục/Thử tắt tiếng, tool thử phát lại một
+lần với video.muted = true. Bảng hiện Âm thanh tắt; có thể bật tiếng trên video.
+Nếu vẫn bị chặn, ghi còn tồn để tiếp tục video khác. Nếu tắt thử tắt tiếng,
+tool chờ bạn bấm Phát video này hoặc native Play rồi tiếp tục bài đã chọn.
+Pause do người dùng được tôn trọng; tool không tự bấm Play ngược lại thao tác đó.
+Video hết: chờ và đọc lại LMS. Nếu LMS ghi tăng phút nhưng vẫn còn thiếu, có
+thể phát lại video ngắn từ đầu. Nếu không ghi tăng hoặc có điều kiện khác, ghi còn tồn.
+Video nhúng không dùng trình phát native chưa được xác minh.
+
+BIỂU MẪU ĐANG TRẢ LỜI
+Trước khi trả lời, bấm Giữ biểu mẫu để trả lời. Tool giữ trang, không tự đổi tab
+đọc tiến trình trong lúc đó. Làm xong, bấm Đọc lại LMS để tiếp tục.
+Tool cũng giữ biểu mẫu khi nhận thao tác nhập/change thật trong input, textarea,
+select hoặc vùng soạn thảo của viewer. Focus đơn thuần không kích hoạt giữ trang.
+Tool không đọc nội dung/câu trả lời bên trong iframe khác nguồn. Vì không phát
+hiện được thao tác nhập ở đó, PHẢI bấm Giữ biểu mẫu trước khi trả lời trong iframe.
+Đọc lại LMS có thể khiến chính LMS tạo lại biểu mẫu; hoàn tất/lưu bản nháp trước
+khi bấm. Chuyển bật/tắt Chạy liên tục không tự bỏ trạng thái giữ biểu mẫu.
+
+BẢNG THỜI GIAN VÀ MỤC CÒN TỒN
+Đơn vị phút:giây; 5:00 là 5 phút, không phải 5 giờ.
+- Mục sao đỏ: số mục LMS báo hoàn thành / tổng mục bắt buộc đọc được.
+- Yêu cầu tối thiểu: ngưỡng phút của mục đang chọn.
+- LMS đã ghi nhận: số phút trong bảng LMS; chỉ đổi khi đọc được báo cáo mới.
+- Còn thiếu theo LMS: yêu cầu trừ phút LMS, thấp nhất 0.
+- Phát/Hiển thị tại máy: thời gian quan sát hợp lệ trong phiên này.
+- Còn lại ước tính: thời gian còn thiếu trừ phần quan sát chưa được LMS xác nhận.
+- Số liệu đọc N giây trước: tuổi dữ liệu; không phải số giây đã học.
+- Tự đọc lại sau: thời gian tới lần kiểm tra tiếp. Khi mất mẫu, có thông báo
+  bộ đếm gián đoạn và dùng lịch dự phòng; video Pause hiển thị chờ Play.
+- Mục còn tồn: tên, mục chứa, lý do, sẽ thử lại/đang thử lại/cần xử lý trên LMS.
+Thiếu dữ liệu hiển thị --:--. Ước tính 0:00 không xác nhận hoàn thành.
+Tab bị ẩn, mất focus khi tắt chế độ chia màn hình, video Pause/đứng, tua tới
+trước hoặc khoảng lấy mẫu dài không cộng vào phút phát tại máy. Nội dung trống/sai viewer không được đếm là hiển thị đúng.
+Với PDF/iframe, thời gian vùng tài liệu hiện không chứng minh file tải xong
+hoặc bạn đã đọc hết. Xác nhận hoàn thành vẫn phải do LMS báo.
+
+ĐIỀU KHIỂN VÀ KIỂM TRA THỰC TẾ
+Dừng hủy các lượt thử lại và ngăn tự phát muộn. Bắt đầu tạo lượt mới, đọc lại
+danh sách từ LMS và xóa danh sách còn tồn/bộ đếm của phiên trước.
+Đọc lại LMS dùng được lúc phát, hiển thị, chờ Play hoặc chờ bạn thực hiện.
+Giữ tab LMS đang hiện trong cửa sổ chưa bị thu nhỏ, máy đang hoạt động. Đổi sang
+tab khác hoặc trình duyệt báo hidden thì tạm dừng; hiện lại mới tiếp tục bộ đếm
+và thời gian chờ thử lại. Tắt chế độ chia màn hình thì cần cả focus thật.
+Tiện ích không chống ngủ máy.
+Tự chọn bài trong menu nhường quyền điều khiển và dừng hàng đợi; bấm Bắt đầu để chạy lại.
+Đổi lớp xóa bộ đếm và mục còn tồn của lớp cũ. Mỗi môn phải được mở riêng.
+
+Sau khi cập nhật, kiểm tra bảng có bản 0.8.2 và Chạy liên tục đang bật. Ở khảo sát,
+xem Hiển thị tại máy tăng và Tự đọc lại sau giảm. Sau lần kiểm tra, phút LMS có
+thể tăng hoặc mục được ghi còn tồn; tool cần tiếp tục các nội dung khả dụng sau đó.
+Nếu vẫn đứng, bấm Kiểm tra trang, gửi báo cáo cùng hàng tiến trình/HTML của mục
+đang mở. Không cần mật khẩu, cookie hoặc token.
+
+MỞ LMS KHI ĐĂNG NHẬP WINDOWS
+Sau khi đã kiểm tra lớp chạy đúng: Win+R > shell:startup, sao chép lối tắt Edge
+vào thư mục này. Trong Properties của bản sao, giữ Target cũ và thêm URL lớp
+trong dấu ngoặc kép ở cuối. Mở đúng hồ sơ Edge đã cài tiện ích.
+Khi phiên VNU hết hạn, cần đăng nhập lại. Xóa bản sao lối tắt để tắt khởi động.
+
+KIỂM CHỨNG
+Xem KET-QUA-KIEM-THU.txt để biết số ca và phạm vi kiểm tra của bản này.
+Kiểm thử code/DOM dùng cấu trúc LMS đã biết, mô phỏng tab, media, focus, thời gian
+và server. Xem báo cáo kiểm thử để phân biệt kết quả hiện tại với bản cũ.
+Chưa kiểm chứng 0.8.2 trên Edge/Windows với tài khoản VNU thật. Toàn bộ sao đỏ
+hoàn thành trong bảng cũng không đủ suy ra đã đạt điểm hay mọi điều kiện của môn.
+
+CHẠY TEST MÃ NGUỒN
+Tiện ích không cần Node.js để chạy. Để chạy test, cài Node.js, cd vnu-lms-player,
+chạy npm install rồi npm test. npm run check kiểm tra cú pháp.

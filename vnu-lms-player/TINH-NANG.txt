@@ -1,0 +1,70 @@
+VNU LMS — Tính năng 0.8.2
+
+SỬA LỖI 0.8.2
+- Lịch đọc lại LMS dự phòng khi mất mẫu thời gian; giữ bộ đếm tại máy thận trọng.
+- Nội dung chữ động trong cùng bài không làm đứng bộ đếm và lịch kiểm tra.
+- Nhận video có tên khác mẫu bằng viewer, tiêu đề, mục chọn và nguồn native;
+  giữ kiểm tra chống phát nhầm nguồn cũ đang chờ thay.
+- Iframe/input autofocus không giữ nhầm biểu mẫu; nhập/change thật và nút
+  Giữ biểu mẫu vẫn bảo vệ bản nháp. Cần bấm nút trước khi trả lời trong iframe.
+- Phát hiện trình phát mất khi chờ Play, cho thời gian phục hồi có giới hạn.
+- Khoảng chờ khi callback chậm có giới hạn; LMS không ghi tăng vẫn báo còn tồn.
+
+HỖ TRỢ CỬA SỔ NHỎ
+- Mặc định tiếp tục khi tab LMS được trình duyệt báo visible, kể cả cửa sổ khác
+  đang có focus. Tắt Chia màn hình để yêu cầu focus thật như bản cũ.
+- Thu nhỏ xuống thanh tác vụ/đổi tab khiến trang hidden thì vẫn tạm dừng.
+- Bảng gọn thích ứng cửa sổ hẹp/thấp; giới hạn theo viewport, điều khiển bám đáy.
+- Mở bài/resize đưa nội dung bị đẩy hẳn ngoài khung vào vùng nhìn, giữ vị trí
+  phát và tổng bộ đếm; không cuộn hoặc giải phóng biểu mẫu đang được giữ.
+- Chẩn đoán tách hiển thị, focus thật, điều kiện tiếp tục và kích thước cửa sổ.
+- Lưu lựa chọn chia màn hình qua storage; không giả focus/visibility cho LMS.
+
+HÀNG ĐỢI LIÊN TỤC
+- Mặc định bật hàng đợi liên tục: mục bị chặn được ghi lại, hàng đợi tiếp tục
+  các nội dung khả dụng sau đó. Không đánh dấu mục bị bỏ lại là đã hoàn thành.
+- Khảo sát/thảo luận/bài kiểm tra có ngưỡng phút được tự theo dõi và đọc lại LMS;
+  tên loại nội dung không còn tự làm luồng dừng ngay sau các bài đầu.
+- Cuối lượt, tự thử lại một lượt các lỗi có thể phục hồi, sau 15 giây tab được phép tiếp tục theo chế độ.
+- Có giới hạn khi LMS không tăng phút, không đọc được số phút, hoặc đủ phút nhưng
+  vẫn Chưa hoàn thành; tránh chạy lặp vô hạn.
+- Bảng Mục còn tồn hiện tên, mục chứa, nguyên nhân và trạng thái thử lại/xử lý.
+- Báo cáo hoàn thành chỉ dùng trạng thái do LMS hiển thị, giữ tổng sao đỏ đầy đủ.
+- Thử lại play() một lần ở chế độ tắt tiếng nếu native autoplay bị chặn.
+  Chặn tiếp thì ghi còn tồn; tắt lựa chọn này để chờ thao tác Play trực tiếp.
+- Nút Giữ biểu mẫu để trả lời và bảo vệ khi phát hiện nhập/change thật trong
+  viewer. Không coi focus là nhập; không đọc câu trả lời trong iframe khác nguồn.
+- Lưu bốn lựa chọn tự chạy/chạy liên tục/thử tắt tiếng/chia màn hình qua storage.
+
+TÍNH NĂNG GIỮ LẠI
+- Hàng đợi mọi mục sao đỏ: thông báo, hướng dẫn, bài đọc, PDF, video và hoạt động.
+- Chọn mục chưa hoàn thành theo thứ tự bảng; bỏ qua mục tùy chọn và đã hoàn thành.
+- Mở menu thu gọn/lồng nhau qua mũi tên native; không đoán bằng nút Tiếp theo.
+- Nhận Video:, Video 1:, Video 2: và video tên khác mẫu đã xác minh từ viewer.
+- Phân biệt tên trùng ở các mục chứa khác nhau; không bấm tùy tiện nếu vẫn mơ hồ.
+- Xác minh tiêu đề thanh xanh có span con chứa tên môn và đúng viewer/nguồn media.
+- Giữ viewer/vị trí video đã xác minh khi LMS giữ nguyên sau lần đọc tiến trình.
+- Phát video native 1×; tôn trọng Pause; tạm dừng khi bị ẩn hoặc mất focus ở chế độ yêu cầu focus.
+- Tách phút LMS với thời gian tại máy và ước tính; không tính tua/đứng/gián đoạn dài.
+- Đọc lại theo thời gian quan sát và lịch dự phòng khi mất mẫu; chờ LMS khi video hết.
+- Bảng hiện bước hiện tại, số sao đỏ hoàn thành, yêu cầu, phút LMS, còn thiếu,
+  thời gian phiên, còn lại ước tính, tuổi số liệu và lịch kiểm tra tiếp.
+- Dừng hủy thử lại và chặn tự phát muộn; đổi lớp xóa trạng thái lớp cũ.
+- Kiểm tra trang cung cấp chẩn đoán loại nội dung, nguồn, viewer, bảng và mục còn tồn.
+- Bảng thu gọn/cuộn được; có hướng dẫn mở LMS khi đăng nhập Windows.
+
+PHẠM VI
+Tool chạy trong một lớp đang mở, với cấu trúc LMS và video native được nhận diện.
+Không tự trả lời/nộp khảo sát, bài kiểm tra, bài tập, thảo luận hoặc sửa điểm/trạng thái.
+Không gọi API ghi thời gian, giả heartbeat, đọc tài khoản/cookie/token hay tạo focus giả.
+Mục yêu cầu trả lời/nộp hoặc điều kiện khác có thể còn tồn dù đã đủ phút.
+Giữ biểu mẫu là thao tác chủ động trước khi nhập ở iframe; không phát hiện được
+việc điền hoặc nộp thành công bên trong iframe khác nguồn.
+Ngưỡng không rõ, viewer chưa nhận diện, video nhúng khác hoặc cấu trúc thay đổi
+cần dữ liệu bổ sung; thời gian vùng PDF/iframe hiện không chứng minh file đã tải xong.
+Không tự liệt kê/chạy nối tiếp mọi môn, giữ máy khỏi ngủ hoặc tự đăng nhập lại VNU.
+Xem KET-QUA-KIEM-THU.txt: kiểm thử mô phỏng đã qua, chưa xác minh server thật
+trên Edge/Windows. Đủ sao đỏ trong bảng không suy ra đã đạt mọi điều kiện của môn.
+
+Chế độ chia màn hình không đảm bảo server ghi phút khi LMS yêu cầu focus thật.
+Page Visibility không xác nhận mọi mức che khuất cửa sổ hoặc việc đã đọc nội dung.

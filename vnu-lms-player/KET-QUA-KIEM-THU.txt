@@ -1,0 +1,75 @@
+VNU LMS Player 0.8.2 — Kiểm thử, 2026-10-25
+
+KẾT QUẢ BẢN HIỆN TẠI
+295/295 ca code/DOM đóng gói đã qua; không bỏ qua hoặc hủy ca.
+Bốn tệp runtime qua node --check.
+265 ca có sẵn được giữ, trong đó 3 ca cập nhật theo hành vi mới:
+iframe autofocus không giữ trang; callback bị gián đoạn kích hoạt đọc lại
+LMS nhưng không được cộng vào bộ đếm tại máy.
+Thêm 7 ca tái hiện/đối chứng và 23 ca kiểm tra giới hạn phục hồi, tổng 30 ca mới.
+
+SO SÁNH TRƯỚC VÀ SAU SỬA
+Cùng 7 ca tái hiện chạy trên runtime 0.8.1 nguyên gốc: 5 thất bại, 2 đối chứng qua.
+Cả 7 ca qua trên 0.8.2. Năm ca thất bại của bản cũ không tính vào 295 ca qua.
+1. Callback cách nhau 10 giây liên tục: sau 10 phút phải đọc lại LMS,
+   không đứng mãi tại 0:00 và cũng không cộng bù thành phút học.
+2. Video tên Bài 1: Tổng quan...: nhận đúng từ viewer và phát, không bỏ qua
+   chỉ vì tiêu đề không bắt đầu bằng Video.
+3. Iframe tự nhận focus, chưa nhập gì: không giữ nhầm biểu mẫu và dừng luồng.
+4. Trình phát biến mất lúc chờ Play: không chờ vô hạn; phục hồi có giới hạn.
+5. Chữ trong cùng viewer thay đổi mỗi lần lấy mẫu: không làm mất toàn bộ
+   thời gian theo dõi hoặc chặn mãi lần đọc tiến trình tiếp theo.
+Hai đối chứng: callback bình thường vẫn chuyển khi LMS xác nhận; cửa sổ
+visible mất focus vẫn chạy ở chế độ chia màn hình, tab hidden vẫn tạm dừng.
+
+23 CA GIỚI HẠN PHỤC HỒI
+- Không được cấp phút: đọc lại có giới hạn, báo còn tồn rồi phát mục sau;
+  mục cũ vẫn Chưa hoàn thành, không sửa phút hoặc tổng hoàn thành.
+- Mục cần 10 phút không được bỏ lại sớm chỉ vì đã có 3 lần đọc trong 5 phút.
+- Video thực sự tiến thêm qua callback chậm: đọc report mới, không cộng mẫu thiếu.
+- Tab bị ẩn không tiêu hao lịch dự phòng hay khoảng chờ phục hồi.
+- Pause sau gián đoạn giữ video dừng, ngừng đọc tự động và hiện chờ Play.
+- Dừng hủy lịch dự phòng và không tạo trạng thái hoàn thành từ ước tính.
+- Bài đọc có chữ động chỉ hoàn thành khi report độc lập xác nhận.
+- Tiêu đề viewer đổi sang bài khác không được che bởi định danh đồng hồ cũ.
+- Focus chương trình vào input không được coi là nhập.
+- Change thật vẫn giữ bản nháp, không tự chuyển tiến trình hoặc nộp form.
+- Nút Giữ biểu mẫu bảo vệ iframe, không đọc contentDocument khác nguồn.
+- Video tên khác mẫu đã được chọn sẵn vẫn nhận diện được.
+- Tên có chữ thảo luận nhưng thực tế là video: nhận đúng player.
+- Kiểu video đã xác minh/vị trí native được giữ qua lần đọc tiến trình.
+- Nhãn bài mới nhưng player cũ còn chờ thay: không phát nhầm nguồn.
+- Video tên khác mẫu cần cả tiêu đề viewer, không chỉ menu được chọn.
+- Tên trùng mơ hồ không bị đoán thành video để bấm nhầm mục.
+- Mất player thoáng qua khi chờ Play: có thời gian phục hồi, không bỏ bài vội.
+- Mất player lâu: ghi còn tồn và phát nguồn khả dụng sau.
+- Khoảng tab bị ẩn không làm hết thời gian phục hồi player.
+- Đồng hồ đọc chấp nhận chữ động nếu định danh bài không đổi.
+- Nguồn PDF/iframe đổi trên cùng phần tử: không ghép nhầm mẫu thời gian.
+- Nội dung chưa sẵn sàng, tab không được phép chạy và khoảng dài không được cộng.
+
+CÁC NHÓM CŨ ĐƯỢC CHẠY LẠI
+41 trình phát; 77 luồng lớp/video; 21 DOM/chẩn đoán; 28 parser/menu;
+25 nội dung bắt buộc; 12 định danh/tiêu đề; 4 cấu hình/gói; 6 stress;
+31 chạy liên tục/biểu mẫu/phục hồi; 20 cửa sổ/resize/chia màn hình.
+Một ca stress chứa nhiều thao tác; không tính mỗi thao tác là một ca độc lập.
+
+GIỚI HẠN BẰNG CHỨNG
+Đây là kiểm thử Node/DOM, không phải chạy Edge/Chrome trên Windows thật.
+Media/play(), hình học, focus/visibility, timer và số phút server đều mô phỏng.
+Số phút server mô phỏng được cấp độc lập với bộ đếm tiện ích.
+Chưa đăng nhập VNU thật để kiểm tra autoplay, callback chậm thật, cấu trúc
+các môn khác, vòng đời biểu mẫu hoặc cách server ghi phút.
+20 ca dùng hai HTML đầy đủ của bản 0.8.1 không được chạy lại ở lượt này;
+hai HTML và script kiểm thử riêng không nằm trong ZIP. Không tính chúng vào 295.
+Các selector đã biết vẫn được kiểm tra bằng fixture có cùng cấu trúc DOM.
+
+LMS đã ghi nhận lấy từ bảng tiến trình mà trang hiển thị. Tool không tự gọi
+API ghi phút, tạo heartbeat hoặc xác nhận server đã làm mới chỉ từ tuổi dữ liệu.
+Chỉ trạng thái Đã hoàn thành từ LMS mới được xác nhận. Mục yêu cầu trả lời/nộp
+vẫn cần người học thực hiện; iframe cần bấm Giữ biểu mẫu trước khi trả lời.
+
+CHẠY LẠI
+Cài Node.js; trong vnu-lms-player chạy npm install, npm test, npm run check.
+Test chạy lần lượt để giảm số tiến trình và bộ nhớ sử dụng đồng thời.
+Tiện ích không cần Node.js để chạy trên Edge/Chrome.

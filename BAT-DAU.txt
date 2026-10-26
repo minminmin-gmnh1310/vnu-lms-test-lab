@@ -1,0 +1,20 @@
+VNU LMS Test Lab 1.0 — máy ảo GitHub Actions
+
+ĐỌC README.md để làm từng bước. Không cần cài máy ảo Windows vào laptop.
+
+1. Tạo repository GitHub mới, rỗng, Private: vnu-lms-test-lab.
+2. Đưa toàn bộ nội dung thư mục này lên repository, gồm .github/workflows.
+3. Actions -> VNU LMS isolated tests -> Run workflow.
+4. Chọn suite=all, runner=ubuntu-latest rồi chạy. Có thể chọn windows-latest
+   nếu muốn kiểm tra trên máy ảo Windows (trình duyệt vẫn là Chromium thử nghiệm).
+5. Khi workflow đã chạy trên GitHub, laptop có thể tắt. Xem kết quả sau trong
+   Artifacts -> VNU-LMS-test-results; gửi gói kết quả đó để mình phân tích.
+
+Bản lab không kết nối VNU, không cần đăng nhập, không tăng thời gian học thật.
+Yêu cầu bài mô phỏng chỉ 1.5 giây; video kiểm thử 4 giây, phát native 1x.
+304 ca Node/DOM/server đã kiểm tra tại môi trường xây dựng, khoảng 8 giây.
+Hai kịch bản trình duyệt thật CHƯA được chạy ở môi trường xây dựng này;
+lần Run workflow đầu là bước xác nhận chúng trên máy ảo GitHub.
+
+Kết quả xanh chứng minh phạm vi lab tương ứng, không chứng minh server VNU
+chấp nhận phút học hoặc mọi môn trên Edge/Windows thật đều tương thích.

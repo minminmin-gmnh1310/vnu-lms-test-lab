@@ -1,0 +1,50 @@
+name: VNU LMS isolated tests
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Test suite
+        type: choice
+        options: [all, unit, browser]
+        default: all
+      runner:
+        description: OS of the remote VM
+        type: choice
+        options: [ubuntu-latest, windows-latest]
+        default: ubuntu-latest
+permissions:
+  contents: read
+jobs:
+  isolated-lab:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Fast logic and server tests
+        if: inputs.suite != 'browser'
+        run: npm test
+      - name: Install isolated test browser
+        if: inputs.suite != 'unit'
+        run: npx playwright install --with-deps chromium
+      - name: Real browser with short mock lessons
+        if: inputs.suite != 'unit' && runner.os == 'Linux'
+        run: xvfb-run -a npm run test:browser
+      - name: Real browser on Windows VM
+        if: inputs.suite != 'unit' && runner.os == 'Windows'
+        run: npm run test:browser
+      - name: Keep test reports even on failure
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: VNU-LMS-test-results
+          path: results/
+          retention-days: 3
+          if-no-files-found: warn

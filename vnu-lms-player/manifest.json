@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "VNU LMS — Nội dung bắt buộc",
+  "version": "0.8.2",
+  "description": "Chạy hàng đợi mục sao đỏ: video 1×, nội dung theo ngưỡng phút; đọc lại LMS và ghi lại mục chưa hoàn thành để thử sau.",
+  "permissions": [
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://lms.vnu.edu.vn/*"
+      ],
+      "js": [
+        "controller.js",
+        "lms.js",
+        "queue.js",
+        "player.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

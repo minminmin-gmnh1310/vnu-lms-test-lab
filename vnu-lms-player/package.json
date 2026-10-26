@@ -1,0 +1,12 @@
+{
+  "name": "vnu-lms-player",
+  "version": "0.8.2",
+  "private": true,
+  "scripts": {
+    "test": "node --test --test-concurrency=1 tests/*.test.cjs",
+    "check": "node --check controller.js && node --check lms.js && node --check queue.js && node --check player.js"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.13"
+  }
+}

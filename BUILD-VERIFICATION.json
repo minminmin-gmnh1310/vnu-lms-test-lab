@@ -1,0 +1,24 @@
+{
+  "unitTests": {
+    "kind": "Node/DOM and mock-server tests",
+    "realVnuServerTested": false,
+    "exitCode": 0,
+    "tests": 304,
+    "pass": 304,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "browserScenarios": "NOT RUN IN BUILD ENVIRONMENT",
+  "githubWorkflow": "NOT TRIGGERED",
+  "realVnuServerTested": false,
+  "runtimeVersion": "0.8.2",
+  "runtimeHashes": {
+    "controller.js": "2c6c2ef2e4820dd435c1d8014485ce8f92d06b81d01e4c1927e5afde49b33fea",
+    "lms.js": "16b632878c55657da7b5b6e97eeeb0e1961d6e46796104b7d53f0f27e4e2b41a",
+    "queue.js": "757c613c32e498291dc8d59a3828d015fdbddf2faf6ca5202588af7fd18bb321",
+    "player.js": "9dca4db94d1332bbe9ee2e5d0aa928a6dddba4efa9acb71bccacfbb2fc45c6ac"
+  },
+  "shortLessonRequiredSeconds": 1.5,
+  "videoClipSeconds": 4
+}

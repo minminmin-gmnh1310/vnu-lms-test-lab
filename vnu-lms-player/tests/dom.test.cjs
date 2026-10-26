@@ -1,0 +1,50 @@
+// DOM integration only. linkedom parses real HTML/selectors; media/layout are simulated.
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {parseHTML}=require('linkedom');
+const controller=fs.readFileSync(require('node:path').join(__dirname,'..','controller.js'),'utf8');
+const ui=fs.readFileSync(require('node:path').join(__dirname,'..','player.js'),'utf8');
+const lms=fs.readFileSync(require('node:path').join(__dirname,'..','lms.js'),'utf8');
+const queue=fs.readFileSync(require('node:path').join(__dirname,'..','queue.js'),'utf8');
+const flush=()=>new Promise(setImmediate);
+function setup(extra='',path='/learn/test') {
+ const {window,document}=parseHTML(`<html><body><video _ngcontent-c11 autoplay class="fill-content-video" controls controlslist="nodownload" id="TNContentView" oncontextmenu="return false;"><source _ngcontent-c11 type="video/mp4" src="http://cdnlms.vnu.edu.vn/dhqg.file.api/uploads/lms/media/thaiba/20240302/tmpv7lthk_gioi-thieu-ve-hoc-phan---thay-tuan.mp4"></video><button _ngcontent-c11="" class="btn btn-secondary" type="button"><i class="fas fa-arrow-left"></i>&nbsp;Mục trước</button><button id="next" _ngcontent-c11="" class="btn btn-secondary" type="button"><i _ngcontent-c11="" class="fas fa-arrow-right"></i>&nbsp;Tiếp theo</button>${extra}</body></html>`);
+ const s={window,document,clock:0,visible:true,focus:true,path,clicks:0,playCalls:0,pauseCalls:0,paused:true,ended:false,time:0,ready:2,timeouts:[]};
+ Object.defineProperty(document,'baseURI',{value:'https://lms.vnu.edu.vn/learn/test'});
+ Object.defineProperty(document,'visibilityState',{get:()=>s.visible?'visible':'hidden'});
+ document.hasFocus=()=>s.focus;
+ window.HTMLElement.prototype.getClientRects=function(){return this.style.display==='none'?[]:[{}]};
+ const v=document.getElementById('TNContentView');Object.setPrototypeOf(v,window.HTMLVideoElement.prototype);
+ for(const [name,key] of Object.entries({paused:'paused',ended:'ended',currentTime:'time',readyState:'ready'})) Object.defineProperty(v,name,{get:()=>s[key],set:x=>s[key]=x,configurable:true});
+ v.duration=120;v.error=null;v.playbackRate=1;v.currentSrc=v.querySelector('source').getAttribute('src');
+ v.play=()=>{s.playCalls++;s.paused=false;return Promise.resolve()};v.pause=()=>{s.pauseCalls++;s.paused=true};
+ document.getElementById('next').addEventListener('click',()=>s.clicks++);
+ const location={get pathname(){return s.path}};
+ const context=vm.createContext({document,window,location,HTMLVideoElement:window.HTMLVideoElement,URL,performance:{now:()=>s.clock},Promise,WeakMap,Number,Math,String,setInterval:f=>{s.interval=f},setTimeout:f=>s.timeouts.push(f),getComputedStyle:e=>({visibility:e.style.visibility||'visible',display:e.style.display||'block'})});
+ vm.runInContext(controller,context);vm.runInContext(lms,context);vm.runInContext(queue,context);vm.runInContext(ui,context);
+ s.v=v;s.context=context;s.root=document.getElementById('vnu-lecture-helper').shadowRoot;
+ const visibility=s.root.getElementById('visible-mode');if(visibility)visibility.checked=false;
+ s.start=()=>s.root.getElementById('start').click();s.stop=()=>s.root.getElementById('stop').click();
+ s.tick=(delta=500)=>{s.clock+=delta;s.interval()};s.message=()=>s.root.getElementById('status').textContent;return s;
+}
+test('exact supplied HTML detects native video and starts',async()=>{const s=setup();s.start();await flush();assert.equal(s.playCalls,1);assert.equal(s.paused,false);assert.equal(s.root.getElementById('start').disabled,true)});
+test('exact supplied Next HTML clicked; Previous not clicked',async()=>{const s=setup();let prev=0;s.document.querySelector('i.fa-arrow-left').parentElement.addEventListener('click',()=>prev++);s.start();await flush();s.ended=true;s.tick();s.tick();assert.equal(s.clicks,1);assert.equal(prev,0)});
+test('whitespace around Next still recognized',async()=>{const s=setup();s.document.getElementById('next').appendChild(s.document.createTextNode('\n\t '));s.start();await flush();s.ended=true;s.tick();assert.equal(s.clicks,1)});
+test('invisible duplicate button ignored',async()=>{const s=setup('<button style="display:none"><i class="fa-arrow-right"></i>Tiếp theo</button>');s.start();await flush();s.ended=true;s.tick();assert.equal(s.clicks,1)});
+test('visible duplicate does not click anything',async()=>{const s=setup('<button><i class="fa-arrow-right"></i>Tiếp theo</button>');s.start();await flush();s.ended=true;s.tick();assert.equal(s.clicks,0);assert.match(s.message(),/nhiều nút/)});
+test('disabled next ignored',async()=>{const s=setup();s.document.getElementById('next').disabled=true;s.start();await flush();s.ended=true;s.tick();assert.equal(s.clicks,0)});
+test('aria-disabled next ignored',async()=>{const s=setup();s.document.getElementById('next').setAttribute('aria-disabled','true');s.start();await flush();s.ended=true;s.tick();assert.equal(s.clicks,0)});
+test('video element reused: waits until new declared source loaded',async()=>{const s=setup();s.start();await flush();s.ended=true;s.tick();s.v.querySelector('source').setAttribute('src','/next.mp4');s.tick();assert.equal(s.playCalls,1);s.v.currentSrc='https://lms.vnu.edu.vn/next.mp4';s.ended=false;s.time=0;s.tick();await flush();assert.equal(s.playCalls,2);assert.equal(s.clicks,1)});
+test('native stop button pauses and restores start',async()=>{const s=setup();s.start();await flush();s.stop();assert.equal(s.paused,true);assert.equal(s.root.getElementById('start').disabled,false)});
+test('same ID on nonvideo is rejected',()=>{const s=setup();s.v.replaceWith(Object.assign(s.document.createElement('div'),{id:'TNContentView'}));s.start();assert.equal(s.playCalls,0);assert.match(s.message(),/Mở một bài video/)});
+test('UI survives internal signin → learn route',()=>{const s=setup('','/signin');assert.equal(s.document.getElementById('vnu-lecture-helper').style.display,'none');s.path='/learn/test';s.tick();assert.equal(s.document.getElementById('vnu-lecture-helper').style.display,'block')});
+test('page leaves course: pauses and panel hides',async()=>{const s=setup();s.start();await flush();s.path='/signin';s.tick();assert.equal(s.paused,true);assert.equal(s.document.getElementById('vnu-lecture-helper').style.display,'none')});
+test('focus/visibility gates actual adapter playback',async()=>{const s=setup();s.start();await flush();s.focus=false;s.tick();assert.equal(s.paused,true);s.focus=true;s.tick();await flush();assert.equal(s.paused,false);s.visible=false;s.tick();assert.equal(s.paused,true)});
+test('folding UI keeps controller available',()=>{const s=setup();s.root.querySelector('.fold').click();assert.equal(s.root.querySelector('.box').classList.contains('folded'),true);s.root.querySelector('.fold').click();assert.equal(s.root.querySelector('.box').classList.contains('folded'),false)});
+test('no duplicate panel on repeated UI injection',()=>{const s=setup();vm.runInContext(ui,s.context);assert.equal(s.document.querySelectorAll('#vnu-lecture-helper').length,1)});
+
+test('diagnostic finds real structure without starting playback',()=>{const s=setup();s.root.getElementById('diagnose').click();const text=s.root.getElementById('diagnostic').textContent;assert.match(text,/Video đúng ID: có/);assert.match(text,/Nút Tiếp theo hợp lệ: 1/);assert.match(text,/Phút LMS: chưa xác minh/);assert.equal(s.playCalls,0)});
+test('diagnostic sample reports observed progress without claiming LMS completion',()=>{const s=setup();s.root.getElementById('diagnose').click();s.time=2;s.timeouts.shift()();assert.match(s.root.getElementById('diagnostic').textContent,/2.00 giây/);assert.match(s.root.getElementById('diagnostic').textContent,/chưa xác minh/)});
+test('diagnostic source change invalidates media sample',()=>{const s=setup();s.root.getElementById('diagnose').click();s.v.querySelector('source').src='/new.mp4';s.timeouts.shift()();assert.match(s.root.getElementById('diagnostic').textContent,/Bài đang thay đổi/)});
+test('older diagnostic request cannot overwrite a newer report',()=>{const s=setup();s.root.getElementById('diagnose').click();const old=s.timeouts.shift();s.focus=false;s.root.getElementById('diagnose').click();const message=s.root.getElementById('diagnostic').textContent;old();assert.equal(s.root.getElementById('diagnostic').textContent,message)});
+test('diagnostic missing video remains read-only',()=>{const s=setup();s.v.remove();s.root.getElementById('diagnose').click();assert.match(s.root.getElementById('diagnostic').textContent,/Video đúng ID: không/);assert.equal(s.timeouts.length,0);assert.equal(s.playCalls,0)});
+test('diagnostic does not disclose source URL or account data',()=>{const s=setup();s.root.getElementById('diagnose').click();assert.doesNotMatch(s.root.getElementById('diagnostic').textContent,/cdnlms|thaiba|http|token|cookie/)});
