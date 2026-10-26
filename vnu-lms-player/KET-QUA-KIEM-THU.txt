@@ -1,54 +1,54 @@
-VNU LMS Player 0.8.4 — Kiểm thử, 2026-10-26
+VNU LMS Player 0.8.5 — Kiểm thử 2026-10-26
 
-348/348 ca Node/DOM đóng gói đã qua, không bỏ qua/hủy ca.
-Giữ 316 ca của 0.8.3; 2 ca cập nhật để đợi bước đối chiếu cuối và yêu cầu
-mở nốt các nhánh chưa duyệt. Thêm 32 ca cây sâu, điều kiện trước và xác nhận.
-Bốn tệp runtime qua node --check. Runtime không thêm thư viện hoặc quyền mới.
+369/369 ca Node/DOM của player qua. Tổng cùng lab: 389/389, không bỏ qua/hủy.
+Giữ 348 ca của 0.8.4, thêm 21 ca menu sâu và phục hồi. Lab thêm bốn ca:
+ba replay toàn bộ page.js + model server + bốn file runtime và một ca hợp
+đồng kiểm tra mọi sao đỏ, kể cả nhánh đã hoàn thành, khớp đúng hàng báo cáo.
+Runtime qua node --check; không thêm quyền hoặc thư viện chạy trong tiện ích.
 
-ĐÃ KIỂM TRA
-- Cây lazy 8 và 24 tầng: mở tới lá, phát, đọc lại server mô phỏng, duyệt hết.
-- 270 nhánh trước bài cần mở: không dừng ở giới hạn 256 lần như bản trước.
-- B cần A, A cần C: mở C -> A -> B sau khi LMS mô phỏng xác nhận từng mục.
-- Nhiều bài trước: hoàn thành mọi bài được liệt kê trước khi quay lại.
-- Bài trước không có sao đỏ nhưng được native gate yêu cầu; chuỗi bài trước
-  như vậy cũng được xử lý. Không tự đưa mọi mục tùy chọn vào hàng đợi học.
-- Trạng thái Chưa hoàn thành dù phút lớn: không dùng bộ đếm tại máy để mở khóa.
-- Thiếu/trùng tên bài trước, vòng điều kiện: dừng với mục còn tồn, không đoán.
-- Điều kiện chưa cập nhật dù bài trước đã xong: thử lại trễ tối đa một lần
-  trên cùng trạng thái hoàn thành, rồi giữ mục còn tồn.
-- Gate không có danh sách nhãn: xét lại sau thay đổi hoàn thành thật trong bảng.
-- Thông báo trong bài khác hoặc câu trích dẫn trong reader không thành gate.
-- Bài sao đỏ bị thiếu trong báo cáo nhưng nằm trong nhánh sâu: không báo hết.
-- Hàng mới xuất hiện khi duyệt nhánh: đọc lại bảng và xử lý trước khi kết thúc.
-- Nhánh bị khóa hoặc mũi tên đã mở nhưng con chưa tải: ghi rõ chưa xác minh.
-- Hàng bắt buộc biến mất: không coi là đã hoàn thành; tránh đếm trùng với menu.
-- Mục phát sinh trong lúc chờ phục hồi được đối chiếu lại trước khi dừng.
-- Mũi tên DOM bị tạo lại nhưng vẫn thu gọn: không bấm lặp vô hạn.
-- Chờ con tải ra; đổi tab/ẩn không tiêu hao ngân sách chờ; Dừng hủy mở tiếp.
-- ARIA opener trong menu được đối chiếu; không bấm điều khiển trỏ ra ngoài.
-- Hai lá cùng tên trong menu không thể được xác nhận bằng một hàng báo cáo.
-- Breadcrumb nhiều cấp, icon và dấu » thuộc tên thật vẫn được nhận đúng.
+PHÂN TÍCH KẾT QUẢ NGƯỜI DÙNG GỬI — VNU-LMS-test-results (3).zip
+Đúng lab 1.0.4/player 0.8.4; hash bốn file khớp bản đã giao.
+364/364 ca Node qua. Chromium 156.0.8078.4/Linux/Node v24.21.0.
+controls đạt cả resize, Pause/Play và Stop/Start; visibility đạt đổi tab thật.
+pipeline đạt 7/7 trạng thái server mô phỏng, nhưng fail kiểm tra pending=false.
+Ảnh/trace: Video: Đã hoàn thành nằm ngay dưới Bài 1 ở menu; bảng lại ghi
+1.1 Mục cũ. Đây là lỗi dữ liệu mô phỏng của lab, không phải chứng cứ bỏ bài.
+Trace ghi lượt mở [2,3,4,5,4,6,7]; server cuối cùng ghi hoàn thành các mục 1–7,
+mục 0 tùy chọn chưa hoàn thành. Assertion submissions=0 đã qua trước lỗi.
+23/5/3 console error ở ba kịch bản đều là CSP khi mở javascript:void(0),
+không có pageerror. Lab mới preventDefault ở liên kết mô phỏng để bỏ điều
+hướng giả đó; chưa kết luận console Chromium bản mới sạch khi chưa chạy lại.
 
-NGUỒN VÀ PHẠM VI
-Đối chiếu giao diện công khai: 3.c87cf984f231e960590e.chunk.js (Tm/wm:
-h4 + div > ul.no-padding > li, relationRequired) và assets/i18n/vi-VN.json
-(PORTAL_CONTENT_REQUIRED). Chỉ đọc nhãn trên DOM; không truy cập state Angular,
-API ghi phút, cookie/token hoặc danh sách quan hệ riêng bên trong ứng dụng.
-Dữ liệu điều kiện, số tầng và server trong test do bộ mô phỏng cung cấp.
+SỬA DỮ LIỆU TEST
+Thêm nhánh 1.1 Mục cũ đúng dưới Bài 1. Giữ nguyên kiểm tra phạm vi trong
+player: không làm bài khác nhánh thành đã xác minh chỉ để test chuyển xanh.
+Replay Node tái hiện bố cục sai cũ: vẫn báo đúng một mục chưa đối chiếu.
+Replay cùng mã ứng dụng/động cơ/model server với bố cục đúng: đủ 7/7,
+không còn tồn; xử lý 4 -> 5 -> 4 và không nộp biểu mẫu.
 
-Chưa chạy 0.8.4 trên tài khoản VNU thật hoặc Chromium/Edge trong lượt này.
-Kết quả GitHub đã nhận trước đây thuộc lab 1.0.2/runtime 0.8.2: 307 ca Node
-và ba kịch bản Chromium/Linux qua. Không chuyển kết quả ấy thành bảo đảm cho
-0.8.4. Lab 1.0.4 mới bổ sung gate ngược và đối chiếu toàn bộ menu; cần CI mới.
+LỖI BIÊN PHÁT HIỆN THÊM VÀ ĐÃ SỬA
+- Hai nhánh cùng tên dùng chung khóa chống mở lại, khiến nhánh sau bị bỏ sót.
+- Một nhánh kẹt/tải chậm gây chờ cho cả nhánh khác đang khả dụng.
+- Con tải rồi biến mất lại dùng nhầm mốc chờ cũ; menu biến mất bị kết thúc sớm.
+- Ghép hàng/leaf tham lam làm mục tên trùng báo thiếu dù có phép ghép hợp lệ.
+- Một hàng đã biến mất bị dùng để che nhiều lá trùng tên trong menu.
+15 ca chọn làm đối chứng trên runtime 0.8.4 nguyên gốc: 12 fail, 3 pass.
+Các ca tương ứng đều qua trong bộ 389 ca của bản sửa. Không gọi đó là 12 lỗi
+độc lập; nhiều ca kiểm tra cùng một cơ chế ở các tình huống khác nhau.
 
-KẾT LUẬN CÓ ĐIỀU KIỆN
-Không còn giới hạn số tầng cố định trong cách duyệt; chỉ duyệt được các nhánh
-mà LMS thực sự dựng ra. Không thể biết chắc nội dung hoàn toàn bị backend ẩn.
-Mỗi lượt dò giới hạn 10 phút hoạt động; nhánh kẹt có ngân sách riêng 8 giây.
-Không có menu để đối chiếu thì thông báo chỉ xác nhận trạng thái trong bảng,
-không kết luận mọi phần của môn đã xong. Có phần chưa xác minh thì vẫn còn tồn.
-Bài kiểm tra/biểu mẫu cần nộp vẫn phải tự làm; tool không trả lời hoặc nộp hộ.
+ĐỘ SÂU VÀ CÁC GIỚI HẠN
+Ca mới: cây lazy 40/64 tầng; 512 nhánh có lá tùy chọn hợp lệ; nhánh trùng tên;
+DOM loading mất/tải lại; menu ẩn/xóa/tạo lại; tên trùng ở ancestor/descendant;
+phạm vi sai vẫn chưa xác minh; lá tùy chọn không che lá bắt buộc; Stop giữa
+lượt; bốn cây hỗn hợp seed 7,31,97,2026 và kiểm tra đếm/matching một-một.
+Các ca 8/24 tầng, 270 nhánh, chuỗi điều kiện và biểu mẫu của bản cũ vẫn qua.
+Lab Chromium bổ sung deep-tree với 12 wrapper thêm và hai lần tải trễ 1.2s.
+Mỗi nhánh vẫn có ngân sách chờ 8s; mỗi lượt dò tối đa 10 phút hoạt động,
+không dùng giới hạn số tầng cứng để kết luận hết bài.
 
-CHẠY LẠI
-Trong vnu-lms-player: npm install; npm test; npm run check.
-Tiện ích không cần Node.js khi dùng trên Edge/Chrome.
+BẰNG CHỨNG VÀ CHƯA KIỂM CHỨNG
+389 ca ở đây dùng Node/DOM, media/layout/timer/focus mô phỏng. Replay chạy
+cùng app.js, model server và runtime; không phải khởi động Chromium.
+Chưa chạy bốn kịch bản trình duyệt của lab 1.0.5, chưa đăng nhập VNU thật,
+chưa xác minh Microsoft Edge/Windows. Cần một lượt GitHub mới, không Re-run
+commit cũ. Kết quả Chromium 0.8.4 không được đổi thành bảo đảm cho 0.8.5.

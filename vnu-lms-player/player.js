@@ -10,7 +10,7 @@
   const box=document.createElement('section');box.className='box';
   style.textContent+=' .controls{display:flex;flex-wrap:wrap;gap:6px}.controls button{margin:0}#diagnose{background:#315c74}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;background:#f4f6f8;padding:10px;font:12px/1.5 monospace}.folded pre,.folded details{display:none}details{margin:8px 0;font-size:12px}summary{cursor:pointer;color:#8a2455}ul{padding-left:18px}li{margin:6px 0;overflow-wrap:anywhere}';
   style.textContent+=' .compact{padding:10px;font-size:12px}.compact h3{font-size:14px}.compact p{margin:5px 0}.compact #status{max-height:4.5em;overflow:auto}.compact .timing{padding:8px;margin:6px 0}.compact .timing dt,.compact .timing small{font-size:11px}.compact button{padding:7px 9px;font-size:12px}.controls{position:sticky;bottom:-15px;background:#fff;padding:5px 0;z-index:1}.compact .controls{bottom:-10px}#options summary{color:#315c74}';
-  const heading=document.createElement('h3');heading.textContent='VNU · Nội dung bắt buộc 0.8.4';
+  const heading=document.createElement('h3');heading.textContent='VNU · Nội dung bắt buộc 0.8.5';
   const fold=document.createElement('button');fold.className='fold';fold.textContent='−';fold.setAttribute('aria-label','Thu gọn bảng điều khiển');
   const status=document.createElement('p');status.id='status';status.setAttribute('role','status');
   const engine=document.createElement('p');engine.id='engine';
@@ -223,7 +223,7 @@
   diagnose.addEventListener('click',()=>{
     const id=++diagnosticRun,item=snapshot();
     const lines=[
-      'VNU Player 0.8.4 — kiểm tra trang',
+      'VNU Player 0.8.5 — kiểm tra trang',
       'Trang học: '+(inCourse()?'có':'không'),
       'Trang còn hiển thị: '+(document.visibilityState==='visible'?'có':'không'),
       'LMS có focus thật: '+(document.hasFocus()?'có':'không'),

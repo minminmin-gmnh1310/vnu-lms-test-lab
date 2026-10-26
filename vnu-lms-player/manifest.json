@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "VNU LMS — Nội dung bắt buộc",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "Chạy hàng đợi mục sao đỏ: video 1×, nội dung theo ngưỡng phút; đọc lại LMS và ghi lại mục chưa hoàn thành để thử sau.",
   "permissions": [
     "storage"

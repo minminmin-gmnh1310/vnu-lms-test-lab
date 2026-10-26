@@ -21,7 +21,11 @@ async function snapshot(page){
   const v=document.querySelector('video'),panel=document.getElementById('vnu-lecture-helper')?.shadowRoot;
   return {url:location.href,visibility:document.visibilityState,hidden:document.hidden,focused:document.hasFocus(),
    video:v?{paused:v.paused,time:v.currentTime,readyState:v.readyState}:null,
-   engine:panel?.getElementById('engine')?.textContent,visibilityEvents:window.__vnuLabVisibilityEvents||[]};
+   engine:panel?.getElementById('engine')?.textContent,status:panel?.getElementById('status')?.textContent,
+   pending:panel?.getElementById('pending-list')?.textContent,menuState:panel?.getElementById('menu-state')?.textContent,
+   required:panel?.getElementById('required-summary')?.textContent,
+   menuEvents:window.__vnuLabMenuEvents||[],lessonOpens:window.__vnuLabLessonOpens||[],
+   visibilityEvents:window.__vnuLabVisibilityEvents||[]};
  });
 }
 async function main(){
@@ -29,27 +33,37 @@ async function main(){
  const extension=path.join(work,'extension');fs.mkdirSync(extension);
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'vnu-lms-player','manifest.json'),'utf8'));
  const report={mode:'REAL CHROMIUM + LOCAL MOCK LMS',vnuServerTested:false,windowsEdgeTested:false,environment:{os:process.platform,node:process.version},startedAt:new Date().toISOString(),runtimeVersion:manifest.version,
-  labVersion:'1.0.4',requirementsSeconds:1.5,browser:null,runtimeHashes:{},cases:[],setupError:null};
+  labVersion:'1.0.5',requirementsSeconds:1.5,browser:null,runtimeHashes:{},cases:[],setupError:null};
  try {
   for(const name of scripts){const source=path.join(root,'vnu-lms-player',name);fs.copyFileSync(source,path.join(extension,name));report.runtimeHashes[name]=hash(source);assert.equal(hash(source),hash(path.join(extension,name)));}
   // Chromium match patterns use host names without ports; network routing
   // below still restricts browser requests to this one random loopback port.
   manifest.name+=' — OFFLINE LAB';for(const entry of manifest.content_scripts)entry.matches=['http://127.0.0.1/*'];
   fs.writeFileSync(path.join(extension,'manifest.json'),JSON.stringify(manifest,null,2));
-  const cases=[
-   ['pipeline','pipeline',async(page,context,entry)=>{
-    await page.waitForFunction(()=>document.getElementById('vnu-lecture-helper')?.shadowRoot?.getElementById('required-summary')?.textContent.includes('7 / 7'),null,{timeout:120000});
-    const summary=lab.models.get('pipeline').summary();assert.deepEqual(summary.visits,[2,3,4,5,6,7]);assert.equal(summary.submissions,0);
-    assert.ok(summary.items.filter(x=>x.required).every(x=>x.status==='Đã hoàn thành'));
-    await page.waitForFunction(()=>document.getElementById('vnu-lecture-helper').shadowRoot.getElementById('engine').textContent.includes('Đã dừng'));
-    assert.equal(await panel(page,'pending').isVisible(),false);
-    entry.menuEvents=await page.evaluate(()=>window.__vnuLabMenuEvents);
-    assert.deepEqual(entry.menuEvents.map(x=>x.title),['Bài 2. Nội dung bắt buộc','2.2 Nội dung','2.2.1 Bài giảng','2.2.2 Hoạt động','2.2.3 Tài liệu','Bài 1. Mục trước']);
+  const verifyCourse=async(page,context,entry)=>{
+    await step(entry,'all seven required activities receive mock server completion',async()=>{
+     await page.waitForFunction(()=>document.getElementById('vnu-lecture-helper')?.shadowRoot?.getElementById('required-summary')?.textContent.includes('7 / 7'),null,{timeout:180000});
+     entry.summary=lab.models.get(entry.scenario).summary();assert.deepEqual(entry.summary.visits,[2,3,4,5,6,7]);assert.equal(entry.summary.submissions,0);
+     assert.ok(entry.summary.items.filter(x=>x.required).every(x=>x.status==='Đã hoàn thành'));
+    });
+    await step(entry,'final menu audit stops with no unmatched required activity',async()=>{
+     await page.waitForFunction(()=>document.getElementById('vnu-lecture-helper').shadowRoot.getElementById('engine').textContent.includes('Đã dừng'));
+     entry.menuEvents=await page.evaluate(()=>window.__vnuLabMenuEvents);
+     assert.equal(await panel(page,'pending').isVisible(),false);
+    });
+    await step(entry,'all folders and the prerequisite return are verified',async()=>{
+    const expected=['Bài 2. Nội dung bắt buộc','2.2 Nội dung','2.2.1 Bài giảng','2.2.2 Hoạt động','2.2.3 Tài liệu','Bài 1. Mục trước','1.1 Mục cũ'];
+    if(entry.scenario==='deep')expected.push(...Array.from({length:12},(_,i)=>'Nhánh sâu '+(i+1)));
+    assert.deepEqual(entry.menuEvents.map(x=>x.title).sort(),expected.sort());
     entry.lessonOpens=await page.evaluate(()=>window.__vnuLabLessonOpens);
     const gated=entry.lessonOpens.indexOf(4),prerequisite=entry.lessonOpens.indexOf(5,gated+1),returned=entry.lessonOpens.indexOf(4,prerequisite+1);
     assert.ok(gated>=0 && prerequisite>gated && returned>prerequisite,'Must open the gate, complete its prerequisite, then return; ordinary rereads may reopen the same activity');
-    assert.ok(entry.menuEvents.every(x=>x.type==='expand'));return summary;
-   }],
+    assert.ok(entry.menuEvents.every(x=>x.type==='expand'));
+    });return entry.summary;
+  };
+  const cases=[
+   ['pipeline','pipeline',verifyCourse],
+   ['deep-tree','deep',verifyCourse],
    ['controls','controls',async(page,context,entry)=>{
     await step(entry,'resize and native video at 1x',async()=>{
     await waitPlaying(page);const v=page.locator('video#TNContentView');assert.equal(await v.evaluate(x=>x.playbackRate),1);
@@ -137,6 +151,7 @@ async function main(){
     if(context)entry.pageStates=await Promise.all(context.pages().map(p=>snapshot(p).catch(e=>({error:e.message}))));
    }
    finally {
+    if(lab.models.has(scenario))entry.summary=lab.models.get(scenario).summary();
     entry.finishedAt=new Date().toISOString();fs.writeFileSync(path.join(results,name+'-console.json'),JSON.stringify(logs,null,2));
     // Capture states above BEFORE foregrounding a failed/background page.
     if(page){await page.bringToFront().catch(()=>{});await page.screenshot({path:path.join(results,name+'.png'),fullPage:true,timeout:10000}).catch(()=>{});}

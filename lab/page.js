@@ -47,18 +47,19 @@
   }
   element('progress').replaceChildren(t);
  }
- element('progress-tab').addEventListener('click',async()=>{
+ element('progress-tab').addEventListener('click',async event=>{
+  event.preventDefault();
   display('progress');element('progress').textContent='Đang đọc server mô phỏng…';
   try{await api('state',state());items=await api('progress');table(items);}catch(e){error(e);}
  });
- element('content-tab').addEventListener('click',()=>{display('content');api('state',state()).catch(error);});
+ element('content-tab').addEventListener('click',event=>{event.preventDefault();display('content');api('state',state()).catch(error);});
  const menuEvents=[];window.__vnuLabMenuEvents=menuEvents;
  function leaf(item){
   const div=document.createElement('div');div.className='__lesson-name';const a=document.createElement('a');
   // Exercise both the original native href and a structural leaf fallback.
   if(item.index!==3)a.href='javascript:void(0)';a.dataset.item=item.index;a.textContent=item.title;
   if(item.required){const star=document.createElement('span');star.className='content-required';a.append(star);}
-  a.addEventListener('click',()=>open(item.index));div.append(a);return div;
+  a.addEventListener('click',event=>{event.preventDefault();open(item.index)});div.append(a);return div;
  }
  function folder(title,children){
   const wrapper=document.createElement('div');wrapper.className='class-lesson-child';
@@ -68,20 +69,25 @@
   head.append(arrow,label);inner.append(head);wrapper.append(inner);
   arrow.addEventListener('click',()=>{if(icon.className.includes('fa-chevron-up'))return;
    menuEvents.push({type:'expand',title});icon.className='fa fa-chevron-up';
-   const body=document.createElement('div');body.className='__lesson-description';body.append(...children());inner.append(body);
+   const body=document.createElement('div');body.className='__lesson-description';inner.append(body);
+   const mount=()=>body.append(...children());
+   if(scenario==='deep' && ['Nhánh sâu 4','Nhánh sâu 8'].includes(title))setTimeout(mount,1200);else mount();
   });return wrapper;
  }
  api('progress').then(rows=>{
   items=rows;
   const menu=element('tnContentList');
   if(scenario==='controls')menu.append(...items.map(leaf));
-  else menu.append(folder('Bài 1. Mục trước',()=>items.slice(0,2).map(leaf)),folder('Bài 2. Nội dung bắt buộc',()=>[
+  else {
+   let children=()=>[
    folder('2.2 Nội dung',()=>[
     folder('2.2.1 Bài giảng',()=>items.slice(2,4).map(leaf)),
     folder('2.2.2 Hoạt động',()=>items.slice(4,6).map(leaf)),
     folder('2.2.3 Tài liệu',()=>items.slice(6,8).map(leaf))
-   ])
-  ]));
+   ])];
+   if(scenario==='deep')for(let i=12;i>=1;i--){const child=children,level=i;children=()=>[folder('Nhánh sâu '+level,child)];}
+   menu.append(folder('Bài 1. Mục trước',()=>[folder('1.1 Mục cũ',()=>items.slice(0,2).map(leaf))]),folder('Bài 2. Nội dung bắt buộc',children));
+  }
  }).catch(error);
  setInterval(async()=>{if(busy)return;busy=true;try{
   if(selected!==null&&items[selected]?.kind==='dynamic'&&view==='content')element('TNContentView').textContent='Nội dung mô phỏng · bộ đếm '+(++dynamic);

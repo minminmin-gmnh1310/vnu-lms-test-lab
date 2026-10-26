@@ -1,13 +1,13 @@
-# VNU LMS Test Lab 1.0.4
+# VNU LMS Test Lab 1.0.5
 
-Bộ kiểm thử riêng cho **VNU LMS Player 0.8.4**, chạy trên máy ảo GitHub Actions.
+Bộ kiểm thử riêng cho **VNU LMS Player 0.8.5**, chạy trên máy ảo GitHub Actions.
 Bạn không cần mở laptop suốt lượt chạy và không cần đưa tài khoản VNU vào máy ảo.
 
 ## Vì sao test nhanh được?
 
 Hai cách rút thời gian trong lab:
 
-- **364 ca Node/DOM/server và thiết lập trình duyệt:** gồm 348 ca của tool, 11 ca server, 3 ca thiết lập bằng process giả và 2 ca DOM của trang lab. Các ca này không chạy trình duyệt. Tình huống chờ nhiều phút được thử nhanh bằng đồng hồ và dữ liệu mô phỏng.
+- **389 ca Node/DOM/server và thiết lập trình duyệt:** gồm 369 ca của tool, 11 ca server, 3 ca thiết lập bằng process giả và 6 ca DOM/replay của trang lab. Các ca này không chạy trình duyệt. Tình huống chờ nhiều phút được thử nhanh bằng đồng hồ và dữ liệu mô phỏng.
 - **Trình duyệt thật:** nạp bốn tệp JavaScript gốc của tool, chạy với video WebM tự tạo dài 4 giây và bài mô phỏng chỉ yêu cầu **1.5 giây**. Video vẫn phát native ở 1x. Không tăng tốc thời gian hoặc sửa yêu cầu của LMS VNU.
 
 Máy ảo không làm đồng hồ trên server trường chạy nhanh hơn. Muốn xác minh VNU lưu phút thật vẫn cần một lượt kiểm tra trên VNU theo thời gian thật.
@@ -52,13 +52,13 @@ Các lựa chọn:
 
 | Lựa chọn | Mục đích |
 | --- | --- |
-| `unit` | 348 ca của tool + 11 ca server + 3 ca thiết lập + 2 ca DOM lab; không tải trình duyệt |
-| `browser` | Ba kịch bản trình duyệt thật, không chạy lại bộ unit |
+| `unit` | 369 ca của tool + 11 ca server + 3 ca thiết lập + 6 ca DOM/replay lab; không tải trình duyệt |
+| `browser` | Bốn kịch bản trình duyệt thật, không chạy lại bộ unit |
 | `all` | Chạy cả hai tầng; dùng cho lượt đầu |
 | `ubuntu-latest` | Máy ảo Ubuntu, Chromium có desktop ảo để kiểm tra đổi tab |
 | `windows-latest` | Máy ảo Windows, cùng bộ Chromium thử nghiệm; không phải binary Microsoft Edge |
 
-Lần đầu cần tải dependencies và Chromium, nên thời gian toàn bộ workflow dài hơn khoảng 8 giây của bộ unit. Bộ lab không chờ đủ hàng giờ bài học thật.
+Lần đầu cần tải dependencies và Chromium, nên thời gian toàn bộ workflow dài hơn khoảng 31 giây đo được của bộ Node ở môi trường xây dựng. Bộ lab không chờ đủ hàng giờ bài học thật.
 
 **Không có Run workflow:** kiểm tra file `.github/workflows/vnu-lab.yml` đã ở nhánh mặc định và không bị lồng thêm thư mục. Nếu Actions bị khóa bởi chính sách tài khoản/tổ chức, gửi thông báo lỗi thay vì thay đổi các thiết lập bảo mật khác.
 
@@ -80,7 +80,9 @@ Gửi lại ZIP kết quả, không chỉ ảnh dấu tích xanh. Nếu lỗi x�
 
 ## Những gì lab kiểm tra
 
-Kịch bản `pipeline`: mở menu con bốn cấp được dựng khi bấm mũi tên, ưu tiên nhánh Bài 2 / 2.2 / 2.2.1, kiểm tra đủ sáu mũi tên, gồm nhánh chỉ được mở ở lượt đối chiếu cuối và không bấm nhầm tên thư mục; nhận một lá native thiếu href; bỏ mục tùy chọn và mục đã hoàn thành; qua bài đọc, video có tên khác mẫu, iframe khảo sát tự focus, video tiếp theo, tài liệu nhúng và bài đọc có chữ thay đổi. Khảo sát bị khóa cho tới khi video phía sau hoàn thành: tool phải đọc danh sách điều kiện, phát video, rồi quay lại khảo sát. Lượt mở dự kiến là `[2,3,4,5,4,6,7]`; browser test bắt buộc thấy chuỗi gate 4 -> bài trước 5 -> quay lại 4, cho phép mở lại cùng bài khi đọc lại tiến trình; server tự chặn cấp phút cho mục bị khóa, không tin trạng thái do tiện ích gửi. Tổng trạng thái hoàn thành đến từ **server mô phỏng độc lập**, không lấy bộ đếm của tiện ích làm trạng thái server.
+Kịch bản `pipeline`: mở menu con bốn cấp được dựng khi bấm mũi tên, ưu tiên nhánh Bài 2 / 2.2 / 2.2.1, kiểm tra đủ bảy mũi tên, gồm cả nhánh 1.1 Mục cũ ở lượt đối chiếu cuối và không bấm nhầm tên thư mục; nhận một lá native thiếu href; bỏ mục tùy chọn và mục đã hoàn thành; qua bài đọc, video có tên khác mẫu, iframe khảo sát tự focus, video tiếp theo, tài liệu nhúng và bài đọc có chữ thay đổi. Khảo sát bị khóa cho tới khi video phía sau hoàn thành: tool phải đọc danh sách điều kiện, phát video, rồi quay lại khảo sát. Lượt mở dự kiến là `[2,3,4,5,4,6,7]`; browser test bắt buộc thấy chuỗi gate 4 -> bài trước 5 -> quay lại 4, cho phép mở lại cùng bài khi đọc lại tiến trình; server tự chặn cấp phút cho mục bị khóa, không tin trạng thái do tiện ích gửi. Tổng trạng thái hoàn thành đến từ **server mô phỏng độc lập**, không lấy bộ đếm của tiện ích làm trạng thái server.
+
+Kịch bản `deep-tree`: cùng luồng pipeline, thêm 12 wrapper lồng nhau; nhánh 4 và 8 tải con trễ 1.2 giây. Kiểm tra đủ 19 lần mở nhánh, 7/7 hoàn thành, quay lại bài bị chặn và không còn tồn.
 
 Kịch bản `controls`: video native 1x; resize sang cửa sổ hẹp; Pause/Play bằng bàn phím; Dừng và Bắt đầu lại. Từng bước có kết quả riêng trong báo cáo.
 
@@ -88,7 +90,7 @@ Kịch bản `visibility`: khởi động một Chromium mới với profile lab
 
 Lý do không dùng cách tắt từ phiên CDP mới của bản 1.0.1: Chromium giữ capture handle theo từng EmulationHandler. Lệnh false trên phiên mới không thu hồi handle của phiên Playwright đã gửi true trước đó. Bằng chứng lần chạy: trang mất focus nhưng vẫn visible, không phát sự kiện visibilitychange. Tùy chọn noDefaults ngăn lệnh true ngay từ đầu. Không sửa Playwright hoặc mã runtime của tiện ích.
 
-Ba kịch bản chạy độc lập trong các profile riêng. `controls` và `visibility` dùng cùng dữ liệu video kiểm tra của server mô phỏng; trạng thái server được giữ trong một lượt lab.
+Bốn kịch bản chạy độc lập trong các profile riêng. `controls` và `visibility` dùng cùng dữ liệu video kiểm tra của server mô phỏng; trạng thái server được giữ trong một lượt lab.
 
 Runtime JavaScript được giữ nguyên. Lab tạo bản sao manifest chỉ cho `http://127.0.0.1/*`; profile trình duyệt dùng tạm riêng và bị xóa sau test. Requests trang thử chỉ được phép tới đúng cổng loopback của server lab. Không truy cập `lms.vnu.edu.vn` và không dùng cookie/tài khoản cá nhân.
 
@@ -101,22 +103,23 @@ Runtime JavaScript được giữ nguyên. Lab tạo bản sao manifest chỉ ch
 
 ### Trạng thái xác minh khi giao gói
 
-- Đã chạy **364/364 ca Node/DOM/server và thiết lập**: 348 của player, 11 của server, 3 thiết lập bằng process giả và 2 DOM của trang lab. Mã qua kiểm tra cú pháp.
-- Bản lab 1.0.2/runtime 0.8.2 người dùng gửi đã qua 307/307 Node và ba kịch bản Chromium/Linux. Kết quả này không xác nhận các bản mới.
-- Bản 1.0.4/runtime 0.8.4 thêm đọc gate bài trước, chuỗi điều kiện, kiểm tra nhánh sâu và đối chiếu mọi nhánh trước khi dừng. Pipeline mới phải mở khảo sát, xử lý video mà nó yêu cầu, rồi quay lại; còn xác minh nhánh đầu khóa đã được mở khi đối chiếu cuối.
-- **Chưa chạy Chromium cho lab 1.0.4** trong môi trường xây dựng. Cần một lượt GitHub mới. Không tuyên bố đã chạy Edge/Windows hay tài khoản VNU thật.
+- Đã chạy **389/389 ca Node/DOM/server/replay** và kiểm tra cú pháp. Bộ này bao gồm 369 ca player và 20 ca lab.
+- Lượt GitHub 1.0.4/runtime 0.8.4 do người dùng gửi: 364/364 Node qua; controls và visibility qua. Pipeline đủ 7/7 nhưng còn một mục không khớp vì lab thiếu nhánh 1.1 Mục cũ. Trace xác nhận [2,3,4,5,4,6,7], không phải lỗi bỏ qua khảo sát.
+- Lab 1.0.5 sửa cây dữ liệu, thêm kiểm tra mọi mục bắt buộc khớp report và replay toàn bộ app/runtime/model. Replay tái hiện bố cục sai cũ vẫn báo còn tồn; bố cục đúng hoàn thành không còn tồn.
+- Player 0.8.5 sửa khóa nhánh trùng tên, phục hồi tải/DOM và matching một-một; test mới tới 64 tầng, 512 nhánh và cây nhiều seed.
+- **Chưa chạy Chromium cho bản 1.0.5.** Bốn kịch bản mới/cập nhật cần lượt CI mới. Node replay không thay thế Chromium, Edge/Windows hoặc server VNU thật.
 
-### Cập nhật repository đã tạo
+### Cập nhật repository
 
-Giải nén gói 1.0.4 và chép đè nội dung vào repo cũ, giữ `.git`. Mở PowerShell trong repo:
+Giải nén gói 1.0.5, chép đè vào repo cũ và giữ `.git`. Mở PowerShell trong repo:
 
 ```powershell
 git add vnu-lms-player lab package.json package-lock.json README.md BAT-DAU.txt BUILD-VERIFICATION.json
-git commit -m "Verify deep menus and prerequisite recovery with player 0.8.4"
+git commit -m "Fix lab section consistency and harden deep menu recovery"
 git push
 ```
 
-Sau đó Actions -> VNU LMS isolated tests -> Run workflow mới -> main -> suite=all. Không dùng Re-run lượt cũ vì giữ commit cũ. Tải artifact mới để kiểm tra pipeline/controls/visibility; pipeline phải có menuEvents và lessonOpens đúng thứ tự nêu trên.
+Actions -> VNU LMS isolated tests -> Run workflow mới -> main -> suite=all. Không Re-run lượt cũ. Tải artifact mới; browser-summary phải có pipeline, deep-tree, controls, visibility. Nếu lỗi, báo cáo mới giữ status/pending/menuState, menuEvents, lessonOpens và summary server cả khi assertion thất bại.
 
 ## Nếu muốn chạy cục bộ
 

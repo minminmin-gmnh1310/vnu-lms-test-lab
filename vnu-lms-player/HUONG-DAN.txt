@@ -1,4 +1,17 @@
-VNU LMS — Nội dung bắt buộc 0.8.4 (bản thử nghiệm)
+VNU LMS — Nội dung bắt buộc 0.8.5 (bản thử nghiệm)
+
+SỬA PHỤC HỒI MENU 0.8.5
+- Thư mục cùng tên ở cùng cấp có bộ nhớ mở riêng, không chặn nhầm nhánh sau.
+  Vị trí nhánh chỉ dùng chống bấm lặp; không dùng để đoán chọn bài trùng tên.
+- Nhánh đang chờ mở/tải con không chặn các nhánh khác có thể tiếp tục.
+- Con đã tải rồi bị thay DOM được cấp lại khoảng chờ; menu biến mất thoáng
+  qua được chờ phục hồi, không kết thúc đối chiếu ngay hoặc xóa mục đã biết.
+- Đối chiếu một-một giữa bảng và menu, xử lý tên trùng ở cấp cha/con hoặc
+  hàng không ghi mục chứa. Vẫn báo chưa xác minh nếu nhánh thật sự không khớp.
+- Một hàng biến mất chỉ giải thích một lá tương ứng; không che mất lá trùng
+  thứ hai trong menu.
+- Kiểm thử bổ sung cây 40/64 tầng, 512 nhánh hợp lệ, nhánh trùng tên, tải trễ,
+  DOM biến mất và bốn cây tạo bằng seed cố định để kiểm tra kết quả lặp lại.
 
 MỤC CON VÀ ĐIỀU KIỆN TRƯỚC — 0.8.4
 - Duyệt cây menu đang được LMS dựng ra, không cố định số tầng. Kiểm thử cây
@@ -44,7 +57,7 @@ SỬA MENU CON 0.8.3
 
 CẬP NHẬT TỪ 0.8.2 / 0.8.3
 Bấm Dừng, chép đè thư mục tiện ích bằng bản mới, vào edge://extensions bấm
-Tải lại tiện ích, rồi tải lại trang LMS. Kiểm tra bảng hiển thị 0.8.4.
+Tải lại tiện ích, rồi tải lại trang LMS. Kiểm tra bảng hiển thị 0.8.5.
 Bấm Bắt đầu để đọc lại tiến trình và thử lại các mục còn tồn của lượt trước.
 Nếu vẫn thiếu mục, bấm Kiểm tra trang và gửi nguyên văn phần đối chiếu menu.
 
@@ -66,7 +79,7 @@ CẬP NHẬT TRÊN EDGE / WINDOWS
 2. Giải nén VNU-LMS-Player.zip, thay toàn bộ thư mục tiện ích bằng thư mục
    vnu-lms-player mới chứa manifest.json. Không trộn tệp của hai bản.
 3. Mở edge://extensions, bấm Reload / Tải lại của tiện ích.
-4. F5 tab LMS. Bảng phải ghi VNU · Nội dung bắt buộc 0.8.4.
+4. F5 tab LMS. Bảng phải ghi VNU · Nội dung bắt buộc 0.8.5.
 Nếu vẫn thấy số bản cũ, xóa tiện ích cũ và Load unpacked lại đúng thư mục mới.
 Nếu có nhiều bản tiện ích VNU LMS, chỉ giữ một bản hoạt động.
 Cài mới: bật Developer mode ở edge://extensions, chọn Load unpacked rồi chọn
@@ -204,7 +217,7 @@ Tiện ích không chống ngủ máy.
 Tự chọn bài trong menu nhường quyền điều khiển và dừng hàng đợi; bấm Bắt đầu để chạy lại.
 Đổi lớp xóa bộ đếm và mục còn tồn của lớp cũ. Mỗi môn phải được mở riêng.
 
-Sau khi cập nhật, kiểm tra bảng có bản 0.8.4 và Chạy liên tục đang bật. Ở khảo sát,
+Sau khi cập nhật, kiểm tra bảng có bản 0.8.5 và Chạy liên tục đang bật. Ở khảo sát,
 xem Hiển thị tại máy tăng và Tự đọc lại sau giảm. Sau lần kiểm tra, phút LMS có
 thể tăng hoặc mục được ghi còn tồn; tool cần tiếp tục các nội dung khả dụng sau đó.
 Nếu vẫn đứng, bấm Kiểm tra trang, gửi báo cáo cùng hàng tiến trình/HTML của mục
@@ -220,7 +233,7 @@ KIỂM CHỨNG
 Xem KET-QUA-KIEM-THU.txt để biết số ca và phạm vi kiểm tra của bản này.
 Kiểm thử code/DOM dùng cấu trúc LMS đã biết, mô phỏng tab, media, focus, thời gian
 và server. Xem báo cáo kiểm thử để phân biệt kết quả hiện tại với bản cũ.
-Chưa kiểm chứng 0.8.4 trên Edge/Windows với tài khoản VNU thật. Toàn bộ sao đỏ
+Chưa kiểm chứng 0.8.5 trên Edge/Windows với tài khoản VNU thật. Toàn bộ sao đỏ
 hoàn thành trong bảng cũng không đủ suy ra đã đạt điểm hay mọi điều kiện của môn.
 
 CHẠY TEST MÃ NGUỒN

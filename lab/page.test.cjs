@@ -44,3 +44,10 @@ test('controls browser fixture retains its flat native video control',async()=>{
  const row=L.links(d)[0];assert.ok(row);assert.equal(L.openItem(d,row.textContent,visible),'clicked');
  assert.equal(d.getElementById('TNContentView').tagName,'VIDEO');assert.equal(window.__vnuLabMenuEvents.length,0);
 });
+test('every mandatory CI fixture leaf has a compatible report row, including the precompleted chapter',async()=>{
+ const {document:d,L,visible}=await page(),state={};let snapshot;
+ for(let i=0;i<80;i++){snapshot=L.scanMenu(d,visible,i*500,state);if(snapshot.kind==='ready')break;}
+ assert.equal(snapshot.kind,'ready');assert.equal(snapshot.blocked.length,0);
+ d.getElementById('progress-tab').click();for(let i=0;i<5;i++)await flush();
+ const report=L.progress(d,visible);assert.equal(report.kind,'ready');assert.equal(L.unreportedMenuItems(snapshot,report).length,0);
+});

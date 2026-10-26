@@ -240,6 +240,16 @@ const VnuLms = (() => {
     return null;
   }
   const availability=(document,title,visible)=>blocker(document,title,visible)?.message || null;
+  function branchPosition(control,sidebar) {
+    // Position identifies expansion bookkeeping only; it never chooses a
+    // lesson. Starting above the heading ignores changing status icons.
+    const position=[];
+    for(let node=control.parentElement?.parentElement;node && node!==sidebar && node.parentElement;node=node.parentElement) {
+      if(sidebar && !sidebar.contains(node))break;
+      position.push([...node.parentElement.children].indexOf(node));
+    }
+    return position.reverse();
+  }
   function menuSnapshot(document,visible) {
     const sidebar=document.getElementById('tnContentList');
     if(!sidebar || !visible(sidebar))return {available:false,items:[],folders:[]};
@@ -247,7 +257,6 @@ const VnuLms = (() => {
       const path=linkSections(a,sidebar).reverse(),head=a.closest('.__lesson-name,.__lesson-name-child');
       return {title:titleText(a),path,section:path.at(-1)||null,required:required(a) || !!head && required(head)};
     });
-    const occurrences=new Map();
     const controls=[...sidebar.querySelectorAll('.__lesson-name > span.arrow,.__lesson-name-child > span.arrow,[aria-controls][aria-expanded]')]
       .filter(e=>visible(e) && normalize(e.getAttribute('aria-controls')).split(' ').every(id=>{
         const target=id && document.getElementById(id);return !target || sidebar.contains(target);
@@ -256,11 +265,10 @@ const VnuLms = (() => {
         const native=control.matches('span.arrow'),head=native?control.parentElement:control.closest('.__lesson-name,.__lesson-name-child') || control;
         const label=head.querySelector('a') || (native?null:control),title=titleText(label);
         const path=[...linkSections(label || head,sidebar).reverse(),titleKey(title)];
-        const identity=JSON.stringify(path),occurrence=(occurrences.get(identity)||0)+1;occurrences.set(identity,occurrence);
         const wrapper=head.parentElement,controlled=normalize(control.getAttribute('aria-controls')).split(' ')
           .map(id=>id && document.getElementById(id)).filter(e=>e && sidebar.contains(e));
         const containers=native?[wrapper]:controlled;
-        return {control,title,path,key:identity+'|'+occurrence,disabled:disabled(control),
+        return {control,title,path,key:JSON.stringify([path,control.getAttribute('aria-controls') || '',branchPosition(control,sidebar)]),disabled:disabled(control),
           collapsed:control.getAttribute('aria-expanded')==='false' || !!control.querySelector('i.fa-chevron-down'),
           hasChildren:containers.some(container=>[...container.querySelectorAll('.__lesson-name,.__lesson-name-child')]
             .some(e=>e!==head && !head.contains(e) && !!titleText(e.querySelector('a'))))};
@@ -269,39 +277,62 @@ const VnuLms = (() => {
   }
   function scanMenu(document,visible,now,state) {
     const snapshot=menuSnapshot(document,visible);
-    if(!snapshot.available)return {...snapshot,kind:'ready',blocked:[],expanded:state.expanded||0};
+    if(!snapshot.available) {
+      if(!state.seen)return {...snapshot,kind:'ready',blocked:[],expanded:state.expanded||0};
+      state.missingSince??=now;
+      return {...snapshot,items:state.lastItems || [],kind:now-state.missingSince<8000?'waiting':'ready',
+        blocked:[{title:'Menu nội dung',path:[],key:'missing-menu',reason:'Menu biến mất trong lúc đối chiếu; chưa kiểm tra hết các nhánh.'}],expanded:state.expanded||0};
+    }
+    state.seen=true;state.missingSince=null;state.lastItems=snapshot.items;
     state.attempts??=new Map();state.emptySince??=new Map();state.expanded??=0;
-    const blocked=[];
+    const blocked=[];let loading=false;
     for(const folder of snapshot.folders) {
+      if(folder.hasChildren)state.emptySince.delete(folder.key);
       const reason=folder.disabled ? 'Nhánh đang bị khóa; các mục phía trong chưa được xác minh.'
         : folder.collapsed && state.attempts.has(folder.key) && now-state.attempts.get(folder.key)>=8000
           ? 'Mũi tên chưa mở sau 8 giây; chưa kiểm tra được các mục phía trong.' : null;
       if(reason)blocked.push({...folder,control:undefined,reason});
       else if(!folder.collapsed && !folder.hasChildren) {
         if(!state.emptySince.has(folder.key))state.emptySince.set(folder.key,now);
-        if(now-state.emptySince.get(folder.key)<8000)return {...snapshot,kind:'waiting',blocked,expanded:state.expanded};
-        blocked.push({...folder,control:undefined,reason:'Nhánh đã mở nhưng chưa có mục con tải ra; chưa thể xác nhận đã kiểm tra hết.'});
+        if(now-state.emptySince.get(folder.key)<8000)loading=true;
+        else blocked.push({...folder,control:undefined,reason:'Nhánh đã mở nhưng chưa có mục con tải ra; chưa thể xác nhận đã kiểm tra hết.'});
       }
     }
     const candidates=snapshot.folders.filter(f=>f.collapsed && !f.disabled && !blocked.some(b=>b.key===f.key));
     const pending=candidates.find(f=>state.attempts.has(f.key));
-    if(pending)return {...snapshot,kind:'waiting',blocked,expanded:state.expanded};
-    const next=candidates[0];
+    const next=candidates.find(f=>!state.attempts.has(f.key));
     if(next) {
       state.attempts.set(next.key,now);state.expanded++;state.stableAt=null;
       next.control.click();return {...snapshot,kind:'expanded',blocked,expanded:state.expanded};
     }
+    if(pending || loading)return {...snapshot,kind:'waiting',blocked,expanded:state.expanded};
     const signature=JSON.stringify([snapshot.items,snapshot.folders.map(f=>[f.key,f.collapsed,f.disabled,f.hasChildren]),blocked.map(b=>b.key)]);
     if(signature!==state.signature){state.signature=signature;state.stableAt=now;}
     return {...snapshot,kind:now-state.stableAt>=1000?'ready':'waiting',blocked,expanded:state.expanded};
   }
   function unreportedMenuItems(snapshot,report) {
-    const unused=new Set(report.requiredItems);
-    return snapshot.items.filter(it=>it.required).filter(item=>{
-      const row=[...unused].find(row=>titleKey(row.title)===titleKey(item.title) &&
-        (!row.section || item.path.includes(titleKey(row.section))));
-      if(row){unused.delete(row);return false;}return true;
+    const items=snapshot.items.filter(it=>it.required),rows=report.requiredItems,byTitle=new Map();
+    items.forEach((item,i)=>{const key=titleKey(item.title);if(!byTitle.has(key))byTitle.set(key,[]);byTitle.get(key).push(i)});
+    const owner=new Map(),assigned=new Map();
+    // Audit coverage only, never a click rule. Reassign earlier broad matches
+    // when a later row needs that leaf's specific section. An iterative search
+    // handles overlapping ancestor labels without recursion or greedy guesses.
+    rows.forEach((_,start)=>{
+      const queue=[start],seenRows=new Set(queue),via=new Map();let free=null;
+      for(let q=0;q<queue.length && free===null;q++) {
+        const r=queue[q],row=rows[r];
+        for(const i of byTitle.get(titleKey(row.title)) || []) {
+          if(via.has(i) || row.section && !items[i].path.includes(titleKey(row.section)))continue;
+          via.set(i,r);
+          if(!owner.has(i)){free=i;break;}
+          const next=owner.get(i);if(!seenRows.has(next)){seenRows.add(next);queue.push(next);}
+        }
+      }
+      while(free!==null) {
+        const r=via.get(free),previous=assigned.get(r);owner.set(free,r);assigned.set(r,free);free=previous??null;
+      }
     });
+    return items.filter((_,i)=>!owner.has(i));
   }
   const sectionNumber = value => titleKey(value).match(/^(?:bài\s+)?(\d+(?:\.\d+)*)(?=[\s.:)]|$)/u)?.[1];
   function openItem(document, title, visible, options = {}) {
@@ -343,7 +374,7 @@ const VnuLms = (() => {
     }
     if (control) {
       const label=control.parentElement.querySelector('a'),sidebar=document.getElementById('tnContentList');
-      const path=JSON.stringify([...linkSections(label || control,sidebar).reverse(),titleKey(label),control.getAttribute('aria-controls') || '']);
+      const path=JSON.stringify([...linkSections(label || control,sidebar).reverse(),titleKey(label),control.getAttribute('aria-controls') || '',branchPosition(control,sidebar)]);
       if (options.attempted?.has(control) || options.expandedPaths?.has(path)) return 'expanding';
       options.attempted?.add(control);options.expandedPaths?.add(path);control.click();return 'expanded';
     }

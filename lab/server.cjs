@@ -36,7 +36,7 @@ class MockLms {
 }
 async function startServer(){
  const models=new Map();
- const model=name=>{if(!['pipeline','controls'].includes(name))throw new Error('Invalid scenario');if(!models.has(name))models.set(name,new MockLms(name));return models.get(name);};
+ const model=name=>{if(!['pipeline','controls','deep'].includes(name))throw new Error('Invalid scenario');if(!models.has(name))models.set(name,new MockLms(name));return models.get(name);};
  const server=http.createServer(async(req,res)=>{
   try {
    const url=new URL(req.url,'http://127.0.0.1'),scenario=url.searchParams.get('scenario')||'pipeline';

@@ -3,64 +3,83 @@
     "kind": "Node/DOM and mock-server tests",
     "realVnuServerTested": false,
     "exitCode": 0,
-    "tests": 364,
-    "pass": 364,
+    "tests": 389,
+    "pass": 389,
     "fail": 0,
     "skipped": 0,
     "cancelled": 0
   },
-  "browserScenarios": "NOT RUN for lab 1.0.4 / player 0.8.4; Node/DOM tests only in this build",
-  "githubWorkflow": "Not triggered by this build",
-  "realVnuServerTested": false,
-  "windowsEdgeTested": false,
-  "runtimeVersion": "0.8.4",
+  "runtimeVersion": "0.8.5",
+  "labVersion": "1.0.5",
   "runtimeHashes": {
     "controller.js": "2c6c2ef2e4820dd435c1d8014485ce8f92d06b81d01e4c1927e5afde49b33fea",
-    "lms.js": "3c849d0124052658ced6c3383ecc0c691a10fedb8fa75b8066ab6534a4d10c2c",
-    "queue.js": "0483a6e158b9783671a78e2c770c6858b81b625083092944850a3c3ff99a8d7a",
-    "player.js": "5923ea32407a1d7994421bb97cfa93d89e1ab6b70ed26c5aba08e8109d90a6b0"
+    "lms.js": "f1f2ca76c1bfd09927d786b18d526bfa9ff4c1cfc98d8536818706c9d00c3391",
+    "queue.js": "4f782a169a0576f49c4c62251db70f818ea4b9aef637177da815a0afa47ceb8f",
+    "player.js": "87bc7862e9b40734bffd48a47f8a6e773f539d54aed8a716dd56b17c07d20c2e"
   },
+  "browserScenarios": "NOT RUN for lab 1.0.5 / player 0.8.5",
+  "browserCases": [
+    "pipeline",
+    "deep-tree",
+    "controls",
+    "visibility"
+  ],
+  "githubWorkflow": "Not triggered in this build",
+  "realVnuServerTested": false,
+  "windowsEdgeTested": false,
+  "simulatedDepthsTested": [
+    8,
+    24,
+    40,
+    64
+  ],
+  "simulatedFolderCountTested": 512,
+  "seededTrees": [
+    7,
+    31,
+    97,
+    2026
+  ],
+  "nodeFullPageReplays": [
+    "pipeline consistent",
+    "deep-tree with delayed children",
+    "inconsistent CI 1.0.4 layout stays unresolved"
+  ],
   "shortLessonRequiredSeconds": 1.5,
   "videoClipSeconds": 4,
-  "labVersion": "1.0.4",
-  "nestedMenu": {
-    "depthHasNoHardcodedLimit": true,
-    "simulatedDepthsTested": [
-      8,
-      24
-    ],
-    "simulatedFolderCountTested": 270,
-    "lazyChildren": true,
-    "finalAuditRequired": true,
-    "expectedExpansions": [
-      "Bài 2. Nội dung bắt buộc",
-      "2.2 Nội dung",
-      "2.2.1 Bài giảng",
-      "2.2.2 Hoạt động",
-      "2.2.3 Tài liệu",
-      "Bài 1. Mục trước"
-    ]
+  "beforeAfter": {
+    "kind": "15 selected regression/control tests",
+    "oldRuntime": "0.8.4",
+    "oldPass": 3,
+    "oldFail": 12,
+    "newSelectedTestsPass": true
   },
-  "prerequisites": {
-    "nativeMarkup": "h4 + div > ul.no-padding > li",
-    "expectedGateSubsequence": [
-      4,
-      5,
-      4
-    ],
-    "serverRejectsCreditWhileLocked": true,
-    "requiresNewBrowserRun": true
-  },
-  "previousCi": {
-    "artifact": "VNU-LMS-test-results (2).zip",
-    "labVersion": "1.0.2",
-    "runtimeVersion": "0.8.2",
+  "suppliedCi": {
+    "artifact": "VNU-LMS-test-results (3).zip",
+    "runtimeVersion": "0.8.4",
+    "labVersion": "1.0.4",
     "os": "linux",
     "browser": "156.0.8078.4",
-    "node": "v24.21.0",
-    "unitPassed": 307,
-    "pipeline": "passed; 7/7; visits [2,3,4,5,6,7]; submissions 0",
-    "controls": "all 3 steps passed",
-    "visibility": "all 3 steps passed; native hidden/visible events; same windowId"
-  }
+    "unitPassed": 364,
+    "pipeline": "failed only final pending assertion; 7/7 mock completion; fixture menu missing section 1.1",
+    "controls": "passed",
+    "visibility": "passed",
+    "traceLessonTransitions": [
+      2,
+      3,
+      4,
+      5,
+      4,
+      6,
+      7
+    ],
+    "pageErrors": 0,
+    "consoleCspErrors": {
+      "pipeline": 23,
+      "controls": 5,
+      "visibility": 3
+    }
+  },
+  "fix": "Corrected fixture by adding 1.1 Muc cu; retained section mismatch protection; improved runtime expansion identity/loading/recovery/one-to-one audit",
+  "nextRun": "Run workflow NEW commit suite=all; four browser cases required"
 }

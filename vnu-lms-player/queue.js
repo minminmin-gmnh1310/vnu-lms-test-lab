@@ -89,9 +89,12 @@ const VnuCourseQueue = (() => {
     reconcileMenu(report) {
       if(!this.menuAudit || this.auditSignature!==this.completionSignature)return;
       for(const [key,record] of this.deferred)if(record.fromMenu)this.deferred.delete(key);
-      const extras=VnuLms.unreportedMenuItems(this.menuAudit,report).filter(item=>
-        ![...this.deferred.values()].some(record=>record.waitFor==='report' && !record.fromMenu &&
-          VnuLms.titleKey(record.title)===VnuLms.titleKey(item.title) && (!record.section || item.path.includes(VnuLms.titleKey(record.section)))));
+      const missing=new Set([...this.deferred.values()].filter(record=>record.waitFor==='report' && !record.fromMenu));
+      const extras=VnuLms.unreportedMenuItems(this.menuAudit,report).filter(item=>{
+        const prior=[...missing].find(record=>VnuLms.titleKey(record.title)===VnuLms.titleKey(item.title) &&
+          (!record.section || item.path.includes(VnuLms.titleKey(record.section))));
+        if(prior){missing.delete(prior);return false;}return true;
+      });
       const records=[...extras.map((item,index)=>({...item,key:'menu:item:'+JSON.stringify([item.path,VnuLms.titleKey(item.title),index]),
         reason:'Có sao đỏ trong menu nhưng chưa đối chiếu được với hàng tiến trình. Chưa thể xác nhận hoàn thành.',state:'needs-action'})),
         ...this.menuAudit.blocked.map(item=>({...item,key:'menu:branch:'+item.key,reason:item.reason,state:'waiting-prerequisite'}))];
@@ -409,6 +412,7 @@ const VnuCourseQueue = (() => {
         if(this.phase==='audit' && this.menuScanState) {
           for(const map of [this.menuScanState.attempts,this.menuScanState.emptySince])if(map)for(const [key,value] of map)map.set(key,value+away);
           if(typeof this.menuScanState.stableAt==='number')this.menuScanState.stableAt+=away;
+          if(typeof this.menuScanState.missingSince==='number')this.menuScanState.missingSince+=away;
         }
         this.phaseMessage();
       }
