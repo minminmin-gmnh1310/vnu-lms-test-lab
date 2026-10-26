@@ -4,14 +4,14 @@ const COURSE='/learn/lop-hoc/chi-tiet/11111111-1111-1111-1111-111111111111';
 const definitions=(scenario='pipeline')=>scenario==='controls'
  ? [{title:'Video: Kiểm tra Pause và Dừng',kind:'video',required:true,seconds:60}]
  : [
-  {title:'Thông báo tùy chọn',kind:'page',required:false,seconds:1.5},
-  {title:'Video: Đã hoàn thành',kind:'video',required:true,seconds:1.5,complete:true},
-  {title:'Bài đọc: Hướng dẫn',kind:'page',required:true,seconds:1.5},
-  {title:'Bài 1: Video không có tiền tố',kind:'video',required:true,seconds:1.5},
-  {title:'Phiếu khảo sát chỉ yêu cầu thời gian',kind:'survey',required:true,seconds:1.5},
-  {title:'Video 2: Tiếp theo',kind:'video',required:true,seconds:1.5},
-  {title:'Tài liệu: Hướng dẫn',kind:'iframe',required:true,seconds:1.5},
-  {title:'Bài đọc: Nội dung thay đổi',kind:'dynamic',required:true,seconds:1.5}
+  {title:'Thông báo tùy chọn',kind:'page',required:false,seconds:1.5,section:'1.1 Mục cũ'},
+  {title:'Video: Đã hoàn thành',kind:'video',required:true,seconds:1.5,complete:true,section:'1.1 Mục cũ'},
+  {title:'Bài đọc: Hướng dẫn',kind:'page',required:true,seconds:1.5,section:'2.2.1 Bài giảng'},
+  {title:'Bài 1: Video không có tiền tố',kind:'video',required:true,seconds:1.5,section:'2.2.1 Bài giảng'},
+  {title:'Phiếu khảo sát chỉ yêu cầu thời gian',kind:'survey',required:true,seconds:1.5,section:'2.2.2 Hoạt động',prerequisites:[5]},
+  {title:'Video 2: Tiếp theo',kind:'video',required:true,seconds:1.5,section:'2.2.2 Hoạt động'},
+  {title:'Tài liệu: Hướng dẫn',kind:'iframe',required:true,seconds:1.5,section:'2.2.3 Tài liệu'},
+  {title:'Bài đọc: Nội dung thay đổi',kind:'dynamic',required:true,seconds:1.5,section:'2.2.3 Tài liệu'}
  ];
 class MockLms {
  constructor(scenario='pipeline',now=()=>performance.now()){
@@ -26,9 +26,10 @@ class MockLms {
   if(index===null){this.active=null;return;}
   if(!Number.isInteger(index)||!this.items[index])throw new Error('Invalid lesson');
   if(!this.visits.includes(index))this.visits.push(index);
-  this.active={index,eligible:value.visible===true && (this.items[index].kind!=='video'||value.playing===true)};
+  const unlocked=(this.items[index].prerequisites || []).every(i=>this.items[i].secondsSeen>=this.items[i].seconds);
+  this.active={index,eligible:unlocked && value.visible===true && (this.items[index].kind!=='video'||value.playing===true)};
  }
- report(){this.tick();return this.items.map((x,index)=>({index,title:x.title,kind:x.kind,required:x.required,
+ report(){this.tick();return this.items.map((x,index)=>({index,title:x.title,kind:x.kind,section:x.section,prerequisites:x.prerequisites || [],required:x.required,
   requiredMinutes:x.seconds/60,minutes:Math.floor(x.secondsSeen/60*1e6)/1e6,
   status:x.secondsSeen>=x.seconds?'Đã hoàn thành':'Chưa hoàn thành'}));}
  summary(){return {mode:'OFFLINE MOCK — not VNU',items:this.report(),visits:[...this.visits],submissions:this.submissions};}

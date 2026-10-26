@@ -1,29 +1,13 @@
-VNU LMS Test Lab 1.0.2 — máy ảo GitHub Actions
+VNU LMS Test Lab 1.0.4 — cho Player 0.8.4
 
-ĐỌC README.md để làm từng bước. Không cần cài máy ảo Windows vào laptop.
+Chép đè nội dung ZIP vào repo cũ, giữ .git. Git add/commit/push theo README,
+bao gồm cả vnu-lms-player và lab. Actions -> Run workflow MỚI -> main -> all.
+Không dùng Re-run lượt cũ. Tạo repo lần đầu: xem README.md.
 
-1. Tạo repository GitHub mới, rỗng, Private: vnu-lms-test-lab.
-2. Đưa toàn bộ nội dung thư mục này lên repository, gồm .github/workflows.
-3. Actions -> VNU LMS isolated tests -> Run workflow.
-4. Chọn suite=all, runner=ubuntu-latest rồi chạy. Có thể chọn windows-latest
-   nếu muốn kiểm tra trên máy ảo Windows (trình duyệt vẫn là Chromium thử nghiệm).
-5. Khi workflow đã chạy trên GitHub, laptop có thể tắt. Xem kết quả sau trong
-   Artifacts -> VNU-LMS-test-results; gửi gói kết quả đó để mình phân tích.
+364 ca Node/DOM/server/thiết lập đã qua. CHƯA chạy Chromium cho bản 1.0.4.
+Pipeline mới: menu con lazy, mở mọi nhánh trước kết thúc, đọc danh sách bài
+trước, học video rồi quay lại khảo sát bị khóa. Server mô phỏng tự chặn cấp
+phút khi điều kiện chưa đủ. Video native 1x; không trả lời hoặc nộp biểu mẫu.
 
-Bản lab không kết nối VNU, không cần đăng nhập, không tăng thời gian học thật.
-Yêu cầu bài mô phỏng chỉ 1.5 giây; video kiểm thử 4 giây, phát native 1x.
-307 ca logic/server/thiết lập đã đạt trong môi trường xây dựng.
-Bản 1.0.0 đã chạy trên GitHub: 304 test logic đạt, pipeline 7/7 đạt,
-controls timeout khi chờ tab ẩn vì test chưa tắt focus emulation của Playwright.
-Bản 1.0.1 đã chạy lại: pipeline và controls đạt, visibility vẫn timeout.
-Nguyên nhân thiếu: phiên CDP mới không thu hồi capture handle của phiên gốc.
-Bản 1.0.2 dùng noDefaults từ phiên kết nối ĐẦU TIÊN cho visibility,
-kiểm tra cùng windowId và bỏ ghi hình riêng kịch bản này.
-Ba kịch bản cập nhật CHƯA được chạy lại; bốn file JS của tool giữ nguyên.
-
-ĐÃ CÓ REPO: Chép đè nội dung ZIP vào repo cũ, giữ thư mục .git.
-Chạy git add/commit/push theo README, rồi Run workflow MỚI trên nhánh main.
-Không chọn Re-run lượt cũ, vì sẽ chạy lại mã của commit cũ.
-
-Kết quả xanh chứng minh phạm vi lab tương ứng, không chứng minh server VNU
-chấp nhận phút học hoặc mọi môn trên Edge/Windows thật đều tương thích.
+Lab không kết nối VNU, không cần tài khoản. Bài chỉ yêu cầu 1.5 giây mô phỏng.
+Tải Artifacts/VNU-LMS-test-results sau lượt mới rồi gửi gói kết quả để phân tích.

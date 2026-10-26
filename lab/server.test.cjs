@@ -9,6 +9,14 @@ test('a hidden mock page receives no credit',()=>{const {m,advance}=model();m.st
 test('missing heartbeats cannot manufacture a large credit jump',()=>{const {m,advance}=model();m.state({index:2,visible:true});advance(600000);m.tick();assert.ok(m.report()[2].minutes<0.01);assert.equal(m.report()[2].status,'Chưa hoàn thành');});
 test('switching to progress stops credit and does not submit a survey',()=>{const {m,advance}=model();m.state({index:4,visible:true});advance(100);m.state({index:null});const before=m.report()[4].minutes;advance(100);assert.equal(m.report()[4].minutes,before);assert.equal(m.summary().submissions,0);});
 test('malformed lesson indices are rejected',()=>{const {m}=model();for(const index of [-1,99,'2',2.5])assert.throws(()=>m.state({index,visible:true}),/Invalid lesson/);});
+test('mock independently denies credit to a gated activity before its prerequisite completes',()=>{
+ const {m,advance}=model();m.state({index:4,visible:true,playing:true});for(let i=0;i<30;i++){advance(100);m.state({index:4,visible:true,playing:true});}
+ assert.equal(m.report()[4].minutes,0);assert.equal(m.report()[4].status,'Chưa hoàn thành');
+});
+test('mock unlocks a gated activity only after its prerequisite receives actual mock credit',()=>{
+ const {m,advance}=model();m.state({index:5,visible:true,playing:true});for(let i=0;i<16;i++){advance(100);m.state({index:5,visible:true,playing:true});}
+ assert.equal(m.report()[5].status,'Đã hoàn thành');m.state({index:4,visible:true});advance(100);m.tick();assert.ok(m.report()[4].minutes>0);
+});
 test('mock HTTP server binds loopback and exposes only test fixtures',async()=>{
  const lab=await startServer();try{
   assert.equal(lab.server.address().address,'127.0.0.1');const r=await fetch(lab.origin+lab.coursePath);assert.match(await r.text(),/LMS MÔ PHỎNG/);

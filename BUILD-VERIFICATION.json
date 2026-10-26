@@ -3,34 +3,64 @@
     "kind": "Node/DOM and mock-server tests",
     "realVnuServerTested": false,
     "exitCode": 0,
-    "tests": 307,
-    "pass": 307,
+    "tests": 364,
+    "pass": 364,
     "fail": 0,
     "skipped": 0,
     "cancelled": 0
   },
-  "browserScenarios": "UPDATED 1.0.2 SCENARIOS NOT RUN; supplied CI 1.0.1 pipeline and controls PASSED, visibility prerequisite FAILED",
-  "githubWorkflow": "Updated workflow NOT TRIGGERED",
+  "browserScenarios": "NOT RUN for lab 1.0.4 / player 0.8.4; Node/DOM tests only in this build",
+  "githubWorkflow": "Not triggered by this build",
   "realVnuServerTested": false,
-  "runtimeVersion": "0.8.2",
+  "windowsEdgeTested": false,
+  "runtimeVersion": "0.8.4",
   "runtimeHashes": {
     "controller.js": "2c6c2ef2e4820dd435c1d8014485ce8f92d06b81d01e4c1927e5afde49b33fea",
-    "lms.js": "16b632878c55657da7b5b6e97eeeb0e1961d6e46796104b7d53f0f27e4e2b41a",
-    "queue.js": "757c613c32e498291dc8d59a3828d015fdbddf2faf6ca5202588af7fd18bb321",
-    "player.js": "9dca4db94d1332bbe9ee2e5d0aa928a6dddba4efa9acb71bccacfbb2fc45c6ac"
+    "lms.js": "3c849d0124052658ced6c3383ecc0c691a10fedb8fa75b8066ab6534a4d10c2c",
+    "queue.js": "0483a6e158b9783671a78e2c770c6858b81b625083092944850a3c3ff99a8d7a",
+    "player.js": "5923ea32407a1d7994421bb97cfa93d89e1ab6b70ed26c5aba08e8109d90a6b0"
   },
   "shortLessonRequiredSeconds": 1.5,
   "videoClipSeconds": 4,
-  "labVersion": "1.0.2",
+  "labVersion": "1.0.4",
+  "nestedMenu": {
+    "depthHasNoHardcodedLimit": true,
+    "simulatedDepthsTested": [
+      8,
+      24
+    ],
+    "simulatedFolderCountTested": 270,
+    "lazyChildren": true,
+    "finalAuditRequired": true,
+    "expectedExpansions": [
+      "Bài 2. Nội dung bắt buộc",
+      "2.2 Nội dung",
+      "2.2.1 Bài giảng",
+      "2.2.2 Hoạt động",
+      "2.2.3 Tài liệu",
+      "Bài 1. Mục trước"
+    ]
+  },
+  "prerequisites": {
+    "nativeMarkup": "h4 + div > ul.no-padding > li",
+    "expectedGateSubsequence": [
+      4,
+      5,
+      4
+    ],
+    "serverRejectsCreditWhileLocked": true,
+    "requiresNewBrowserRun": true
+  },
   "previousCi": {
-    "artifact": "VNU-LMS-test-results (1).zip",
-    "labVersion": "1.0.1",
+    "artifact": "VNU-LMS-test-results (2).zip",
+    "labVersion": "1.0.2",
+    "runtimeVersion": "0.8.2",
     "os": "linux",
     "browser": "156.0.8078.4",
-    "unitPassed": 304,
+    "node": "v24.21.0",
+    "unitPassed": 307,
     "pipeline": "passed; 7/7; visits [2,3,4,5,6,7]; submissions 0",
     "controls": "all 3 steps passed",
-    "visibility": "failed; original page visible, hidden=false, focused=false, events=[]",
-    "fix": "connectOverCDP noDefaults on FIRST session of a fresh browser; verify same windowId; no continuous capture for visibility"
+    "visibility": "all 3 steps passed; native hidden/visible events; same windowId"
   }
 }

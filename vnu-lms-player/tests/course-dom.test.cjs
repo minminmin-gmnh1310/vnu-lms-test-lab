@@ -104,7 +104,7 @@ test('LMS confirmed completion chooses next unfinished video through menu',async
  assert.deepEqual(s.opened,[1,2]);assert.equal(s.plays[1],'https://lms.vnu.edu.vn/second.mp4');assert.equal(s.next,0);
 });
 test('all videos complete stops without claiming whole course completion',async()=>{
- const s=setup({rows:f.row(f.firstTitle,5,'Đã hoàn thành')+f.row(f.secondTitle,5,'Đã hoàn thành')});await s.run(5);
+ const s=setup({rows:f.row(f.firstTitle,5,'Đã hoàn thành')+f.row(f.secondTitle,5,'Đã hoàn thành')});await s.until(()=>s.root.getElementById('engine').textContent.includes('Đã dừng'));
  assert.equal(s.plays.length,0);assert.equal(s.opened.length,0);assert.match(s.message(),/tất cả mục có sao đỏ/);assert.match(s.message(),/bài kiểm tra/);
 });
 test('playback alone never rewrites a reported incomplete status',async()=>{

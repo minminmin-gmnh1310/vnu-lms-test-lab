@@ -1,75 +1,54 @@
-VNU LMS Player 0.8.2 — Kiểm thử, 2026-10-25
+VNU LMS Player 0.8.4 — Kiểm thử, 2026-10-26
 
-KẾT QUẢ BẢN HIỆN TẠI
-295/295 ca code/DOM đóng gói đã qua; không bỏ qua hoặc hủy ca.
-Bốn tệp runtime qua node --check.
-265 ca có sẵn được giữ, trong đó 3 ca cập nhật theo hành vi mới:
-iframe autofocus không giữ trang; callback bị gián đoạn kích hoạt đọc lại
-LMS nhưng không được cộng vào bộ đếm tại máy.
-Thêm 7 ca tái hiện/đối chứng và 23 ca kiểm tra giới hạn phục hồi, tổng 30 ca mới.
+348/348 ca Node/DOM đóng gói đã qua, không bỏ qua/hủy ca.
+Giữ 316 ca của 0.8.3; 2 ca cập nhật để đợi bước đối chiếu cuối và yêu cầu
+mở nốt các nhánh chưa duyệt. Thêm 32 ca cây sâu, điều kiện trước và xác nhận.
+Bốn tệp runtime qua node --check. Runtime không thêm thư viện hoặc quyền mới.
 
-SO SÁNH TRƯỚC VÀ SAU SỬA
-Cùng 7 ca tái hiện chạy trên runtime 0.8.1 nguyên gốc: 5 thất bại, 2 đối chứng qua.
-Cả 7 ca qua trên 0.8.2. Năm ca thất bại của bản cũ không tính vào 295 ca qua.
-1. Callback cách nhau 10 giây liên tục: sau 10 phút phải đọc lại LMS,
-   không đứng mãi tại 0:00 và cũng không cộng bù thành phút học.
-2. Video tên Bài 1: Tổng quan...: nhận đúng từ viewer và phát, không bỏ qua
-   chỉ vì tiêu đề không bắt đầu bằng Video.
-3. Iframe tự nhận focus, chưa nhập gì: không giữ nhầm biểu mẫu và dừng luồng.
-4. Trình phát biến mất lúc chờ Play: không chờ vô hạn; phục hồi có giới hạn.
-5. Chữ trong cùng viewer thay đổi mỗi lần lấy mẫu: không làm mất toàn bộ
-   thời gian theo dõi hoặc chặn mãi lần đọc tiến trình tiếp theo.
-Hai đối chứng: callback bình thường vẫn chuyển khi LMS xác nhận; cửa sổ
-visible mất focus vẫn chạy ở chế độ chia màn hình, tab hidden vẫn tạm dừng.
+ĐÃ KIỂM TRA
+- Cây lazy 8 và 24 tầng: mở tới lá, phát, đọc lại server mô phỏng, duyệt hết.
+- 270 nhánh trước bài cần mở: không dừng ở giới hạn 256 lần như bản trước.
+- B cần A, A cần C: mở C -> A -> B sau khi LMS mô phỏng xác nhận từng mục.
+- Nhiều bài trước: hoàn thành mọi bài được liệt kê trước khi quay lại.
+- Bài trước không có sao đỏ nhưng được native gate yêu cầu; chuỗi bài trước
+  như vậy cũng được xử lý. Không tự đưa mọi mục tùy chọn vào hàng đợi học.
+- Trạng thái Chưa hoàn thành dù phút lớn: không dùng bộ đếm tại máy để mở khóa.
+- Thiếu/trùng tên bài trước, vòng điều kiện: dừng với mục còn tồn, không đoán.
+- Điều kiện chưa cập nhật dù bài trước đã xong: thử lại trễ tối đa một lần
+  trên cùng trạng thái hoàn thành, rồi giữ mục còn tồn.
+- Gate không có danh sách nhãn: xét lại sau thay đổi hoàn thành thật trong bảng.
+- Thông báo trong bài khác hoặc câu trích dẫn trong reader không thành gate.
+- Bài sao đỏ bị thiếu trong báo cáo nhưng nằm trong nhánh sâu: không báo hết.
+- Hàng mới xuất hiện khi duyệt nhánh: đọc lại bảng và xử lý trước khi kết thúc.
+- Nhánh bị khóa hoặc mũi tên đã mở nhưng con chưa tải: ghi rõ chưa xác minh.
+- Hàng bắt buộc biến mất: không coi là đã hoàn thành; tránh đếm trùng với menu.
+- Mục phát sinh trong lúc chờ phục hồi được đối chiếu lại trước khi dừng.
+- Mũi tên DOM bị tạo lại nhưng vẫn thu gọn: không bấm lặp vô hạn.
+- Chờ con tải ra; đổi tab/ẩn không tiêu hao ngân sách chờ; Dừng hủy mở tiếp.
+- ARIA opener trong menu được đối chiếu; không bấm điều khiển trỏ ra ngoài.
+- Hai lá cùng tên trong menu không thể được xác nhận bằng một hàng báo cáo.
+- Breadcrumb nhiều cấp, icon và dấu » thuộc tên thật vẫn được nhận đúng.
 
-23 CA GIỚI HẠN PHỤC HỒI
-- Không được cấp phút: đọc lại có giới hạn, báo còn tồn rồi phát mục sau;
-  mục cũ vẫn Chưa hoàn thành, không sửa phút hoặc tổng hoàn thành.
-- Mục cần 10 phút không được bỏ lại sớm chỉ vì đã có 3 lần đọc trong 5 phút.
-- Video thực sự tiến thêm qua callback chậm: đọc report mới, không cộng mẫu thiếu.
-- Tab bị ẩn không tiêu hao lịch dự phòng hay khoảng chờ phục hồi.
-- Pause sau gián đoạn giữ video dừng, ngừng đọc tự động và hiện chờ Play.
-- Dừng hủy lịch dự phòng và không tạo trạng thái hoàn thành từ ước tính.
-- Bài đọc có chữ động chỉ hoàn thành khi report độc lập xác nhận.
-- Tiêu đề viewer đổi sang bài khác không được che bởi định danh đồng hồ cũ.
-- Focus chương trình vào input không được coi là nhập.
-- Change thật vẫn giữ bản nháp, không tự chuyển tiến trình hoặc nộp form.
-- Nút Giữ biểu mẫu bảo vệ iframe, không đọc contentDocument khác nguồn.
-- Video tên khác mẫu đã được chọn sẵn vẫn nhận diện được.
-- Tên có chữ thảo luận nhưng thực tế là video: nhận đúng player.
-- Kiểu video đã xác minh/vị trí native được giữ qua lần đọc tiến trình.
-- Nhãn bài mới nhưng player cũ còn chờ thay: không phát nhầm nguồn.
-- Video tên khác mẫu cần cả tiêu đề viewer, không chỉ menu được chọn.
-- Tên trùng mơ hồ không bị đoán thành video để bấm nhầm mục.
-- Mất player thoáng qua khi chờ Play: có thời gian phục hồi, không bỏ bài vội.
-- Mất player lâu: ghi còn tồn và phát nguồn khả dụng sau.
-- Khoảng tab bị ẩn không làm hết thời gian phục hồi player.
-- Đồng hồ đọc chấp nhận chữ động nếu định danh bài không đổi.
-- Nguồn PDF/iframe đổi trên cùng phần tử: không ghép nhầm mẫu thời gian.
-- Nội dung chưa sẵn sàng, tab không được phép chạy và khoảng dài không được cộng.
+NGUỒN VÀ PHẠM VI
+Đối chiếu giao diện công khai: 3.c87cf984f231e960590e.chunk.js (Tm/wm:
+h4 + div > ul.no-padding > li, relationRequired) và assets/i18n/vi-VN.json
+(PORTAL_CONTENT_REQUIRED). Chỉ đọc nhãn trên DOM; không truy cập state Angular,
+API ghi phút, cookie/token hoặc danh sách quan hệ riêng bên trong ứng dụng.
+Dữ liệu điều kiện, số tầng và server trong test do bộ mô phỏng cung cấp.
 
-CÁC NHÓM CŨ ĐƯỢC CHẠY LẠI
-41 trình phát; 77 luồng lớp/video; 21 DOM/chẩn đoán; 28 parser/menu;
-25 nội dung bắt buộc; 12 định danh/tiêu đề; 4 cấu hình/gói; 6 stress;
-31 chạy liên tục/biểu mẫu/phục hồi; 20 cửa sổ/resize/chia màn hình.
-Một ca stress chứa nhiều thao tác; không tính mỗi thao tác là một ca độc lập.
+Chưa chạy 0.8.4 trên tài khoản VNU thật hoặc Chromium/Edge trong lượt này.
+Kết quả GitHub đã nhận trước đây thuộc lab 1.0.2/runtime 0.8.2: 307 ca Node
+và ba kịch bản Chromium/Linux qua. Không chuyển kết quả ấy thành bảo đảm cho
+0.8.4. Lab 1.0.4 mới bổ sung gate ngược và đối chiếu toàn bộ menu; cần CI mới.
 
-GIỚI HẠN BẰNG CHỨNG
-Đây là kiểm thử Node/DOM, không phải chạy Edge/Chrome trên Windows thật.
-Media/play(), hình học, focus/visibility, timer và số phút server đều mô phỏng.
-Số phút server mô phỏng được cấp độc lập với bộ đếm tiện ích.
-Chưa đăng nhập VNU thật để kiểm tra autoplay, callback chậm thật, cấu trúc
-các môn khác, vòng đời biểu mẫu hoặc cách server ghi phút.
-20 ca dùng hai HTML đầy đủ của bản 0.8.1 không được chạy lại ở lượt này;
-hai HTML và script kiểm thử riêng không nằm trong ZIP. Không tính chúng vào 295.
-Các selector đã biết vẫn được kiểm tra bằng fixture có cùng cấu trúc DOM.
-
-LMS đã ghi nhận lấy từ bảng tiến trình mà trang hiển thị. Tool không tự gọi
-API ghi phút, tạo heartbeat hoặc xác nhận server đã làm mới chỉ từ tuổi dữ liệu.
-Chỉ trạng thái Đã hoàn thành từ LMS mới được xác nhận. Mục yêu cầu trả lời/nộp
-vẫn cần người học thực hiện; iframe cần bấm Giữ biểu mẫu trước khi trả lời.
+KẾT LUẬN CÓ ĐIỀU KIỆN
+Không còn giới hạn số tầng cố định trong cách duyệt; chỉ duyệt được các nhánh
+mà LMS thực sự dựng ra. Không thể biết chắc nội dung hoàn toàn bị backend ẩn.
+Mỗi lượt dò giới hạn 10 phút hoạt động; nhánh kẹt có ngân sách riêng 8 giây.
+Không có menu để đối chiếu thì thông báo chỉ xác nhận trạng thái trong bảng,
+không kết luận mọi phần của môn đã xong. Có phần chưa xác minh thì vẫn còn tồn.
+Bài kiểm tra/biểu mẫu cần nộp vẫn phải tự làm; tool không trả lời hoặc nộp hộ.
 
 CHẠY LẠI
-Cài Node.js; trong vnu-lms-player chạy npm install, npm test, npm run check.
-Test chạy lần lượt để giảm số tiến trình và bộ nhớ sử dụng đồng thời.
-Tiện ích không cần Node.js để chạy trên Edge/Chrome.
+Trong vnu-lms-player: npm install; npm test; npm run check.
+Tiện ích không cần Node.js khi dùng trên Edge/Chrome.

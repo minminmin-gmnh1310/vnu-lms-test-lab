@@ -1,6 +1,54 @@
-VNU LMS — Nội dung bắt buộc 0.8.2 (bản thử nghiệm)
+VNU LMS — Nội dung bắt buộc 0.8.4 (bản thử nghiệm)
 
-SỬA LỖI 0.8.2
+MỤC CON VÀ ĐIỀU KIỆN TRƯỚC — 0.8.4
+- Duyệt cây menu đang được LMS dựng ra, không cố định số tầng. Kiểm thử cây
+  8/24 tầng và 270 nhánh; không còn chặn sau 256 lần mở.
+- Khi hết các mục khả dụng, mở nốt những nhánh còn thu gọn để đối chiếu sao đỏ
+  với bảng tiến trình. Nhánh tải thêm con được duyệt tiếp, không coi mục cha
+  đã hoàn thành là bằng chứng tất cả con đã hoàn thành.
+- Đọc thông báo native Cần hoàn thành các nội dung sau để tiếp tục và danh sách
+  bài trước. Ưu tiên bài còn thiếu đã đối chiếu được trong bảng; kể cả bài
+  không có sao đỏ nếu chính LMS liệt kê nó là điều kiện bắt buộc.
+- Quay lại mục bị chặn sau khi LMS xác nhận các bài trước đã hoàn thành.
+  Hỗ trợ chuỗi nhiều bài và trường hợp cần đồng thời nhiều bài trước.
+- Thiếu tên/trùng tên/điều kiện vòng hoặc bài cần tự nộp: giữ mục còn tồn,
+  không tự vượt khóa hoặc báo đã hoàn thành. Không đoán tên gần giống.
+- Đủ phút tại máy không mở khóa; chỉ trạng thái do bảng LMS cung cấp được dùng.
+- Có sao đỏ trong menu nhưng thiếu hàng tiến trình, nhánh bị khóa/không tải
+  con hoặc hàng bắt buộc biến mất: báo chưa xác minh, không âm thầm bỏ qua.
+- Bảng hiện tình trạng đối chiếu menu và Đang chờ điều kiện mở bài.
+- Nhận tiêu đề viewer có đường dẫn Cha » Nhánh » Tên bài; vẫn kiểm tra đúng
+  bài, nguồn và dấu chọn để tránh nhận nhầm video cũ hoặc tên trùng.
+
+GIỚI HẠN CHỐNG KẸT
+Mỗi mũi tên chưa mở/mục con chưa tải được chờ tối đa 8 giây trong lượt quét.
+Tên/đường dẫn nhánh được ghi lại để tránh bấm mãi khi LMS tạo lại cùng mũi tên.
+Mỗi lượt dò có giới hạn 10 phút tab được phép chạy; hết thời gian thì báo
+chưa kiểm tra xong, không xác nhận hoàn thành. Không có giới hạn số tầng cứng.
+Khi dò bài, một phút không có tiến triển cũng báo lỗi; mở được nhánh mới gia
+hạn khoảng chờ. Dừng/hết phiên/đổi lớp vẫn hủy các bước tiếp theo.
+Một lượt đối chiếu mở menu để xem con, không tự mở từng bài tùy chọn.
+
+SỬA MENU CON 0.8.3
+- Ưu tiên nhánh đánh số theo mục chứa trong bảng: Bài 2 -> 2.2 -> 2.2.1.
+- Đối chiếu mục chứa cả khi báo cáo không đánh dấu tên trùng; giữ kiểm tra mơ hồ.
+- Nhận liên kết native trong các cấp con; hỗ trợ nhãn lá thiếu href/#/javascript:;
+  chỉ trong __lesson-name của menu LMS, không nhận nhầm tên thư mục hay URL ngoài.
+- Mục đã có trong DOM nhưng bị ẩn: mở chính nhánh cha chứa nó.
+- Ký tự định dạng ẩn trong tên không làm mất liên kết; trùng tên vẫn không đoán.
+- Bản 0.8.3 từng giới hạn 3 phút/256 lần mở; 0.8.4 thay bằng giới hạn chống kẹt nêu trên.
+- Đọc thông báo chưa tới ngày mở của LMS và ghi rõ vào Mục còn tồn; không
+  chờ viewer 60 giây rồi báo lỗi chung. Không mở khóa hoặc thay ngày học.
+- Kiểm tra trang bổ sung tên từng mục chưa xong, số liên kết khớp tên/khớp
+  nhánh/đang hiện, và các nhãn menu chưa được nhận diện. Không chép URL ngoài.
+
+CẬP NHẬT TỪ 0.8.2 / 0.8.3
+Bấm Dừng, chép đè thư mục tiện ích bằng bản mới, vào edge://extensions bấm
+Tải lại tiện ích, rồi tải lại trang LMS. Kiểm tra bảng hiển thị 0.8.4.
+Bấm Bắt đầu để đọc lại tiến trình và thử lại các mục còn tồn của lượt trước.
+Nếu vẫn thiếu mục, bấm Kiểm tra trang và gửi nguyên văn phần đối chiếu menu.
+
+CÁC SỬA LỖI GIỮ LẠI TỪ 0.8.2
 - Khi lấy mẫu bị gián đoạn hơn 5 giây, bộ đếm tại máy không cộng bù khoảng
   đó, nhưng vẫn có lịch dự phòng để đọc lại tiến trình LMS khi được phép chạy.
 - Chữ/bộ đếm động trong cùng bài đọc không làm mất mẫu thời gian liên tục.
@@ -18,7 +66,7 @@ CẬP NHẬT TRÊN EDGE / WINDOWS
 2. Giải nén VNU-LMS-Player.zip, thay toàn bộ thư mục tiện ích bằng thư mục
    vnu-lms-player mới chứa manifest.json. Không trộn tệp của hai bản.
 3. Mở edge://extensions, bấm Reload / Tải lại của tiện ích.
-4. F5 tab LMS. Bảng phải ghi VNU · Nội dung bắt buộc 0.8.2.
+4. F5 tab LMS. Bảng phải ghi VNU · Nội dung bắt buộc 0.8.4.
 Nếu vẫn thấy số bản cũ, xóa tiện ích cũ và Load unpacked lại đúng thư mục mới.
 Nếu có nhiều bản tiện ích VNU LMS, chỉ giữ một bản hoạt động.
 Cài mới: bật Developer mode ở edge://extensions, chọn Load unpacked rồi chọn
@@ -43,7 +91,7 @@ Với nội dung có ngưỡng phút đọc được:
 6. Cuối lượt, chờ 15 giây khi tab được phép tiếp tục theo chế độ, rồi thử lại
    một lượt các mục lỗi có thể phục hồi. Sau đó dừng, báo rõ mục còn tồn hoặc tất cả sao đỏ đã được LMS xác nhận.
 
-Bản 0.7.1 mặc định dừng để chờ người dùng ngay khi tới khảo sát. Bản 0.8.2 tự
+Bản 0.7.1 mặc định dừng để chờ người dùng ngay khi tới khảo sát. Bản hiện tại tự
 kiểm tra mục đó theo ngưỡng phút. Nếu LMS chỉ yêu cầu thời gian và xác nhận đủ,
 luồng có thể tự tiếp tục. Nếu còn yêu cầu trả lời/nộp bài, mục được giữ trong
 Mục còn tồn. Tool không trả lời, chọn đáp án, bấm nộp hoặc sửa trạng thái LMS.
@@ -156,7 +204,7 @@ Tiện ích không chống ngủ máy.
 Tự chọn bài trong menu nhường quyền điều khiển và dừng hàng đợi; bấm Bắt đầu để chạy lại.
 Đổi lớp xóa bộ đếm và mục còn tồn của lớp cũ. Mỗi môn phải được mở riêng.
 
-Sau khi cập nhật, kiểm tra bảng có bản 0.8.2 và Chạy liên tục đang bật. Ở khảo sát,
+Sau khi cập nhật, kiểm tra bảng có bản 0.8.4 và Chạy liên tục đang bật. Ở khảo sát,
 xem Hiển thị tại máy tăng và Tự đọc lại sau giảm. Sau lần kiểm tra, phút LMS có
 thể tăng hoặc mục được ghi còn tồn; tool cần tiếp tục các nội dung khả dụng sau đó.
 Nếu vẫn đứng, bấm Kiểm tra trang, gửi báo cáo cùng hàng tiến trình/HTML của mục
@@ -172,7 +220,7 @@ KIỂM CHỨNG
 Xem KET-QUA-KIEM-THU.txt để biết số ca và phạm vi kiểm tra của bản này.
 Kiểm thử code/DOM dùng cấu trúc LMS đã biết, mô phỏng tab, media, focus, thời gian
 và server. Xem báo cáo kiểm thử để phân biệt kết quả hiện tại với bản cũ.
-Chưa kiểm chứng 0.8.2 trên Edge/Windows với tài khoản VNU thật. Toàn bộ sao đỏ
+Chưa kiểm chứng 0.8.4 trên Edge/Windows với tài khoản VNU thật. Toàn bộ sao đỏ
 hoàn thành trong bảng cũng không đủ suy ra đã đạt điểm hay mọi điều kiện của môn.
 
 CHẠY TEST MÃ NGUỒN

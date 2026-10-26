@@ -1,7 +1,8 @@
 /* Required LMS items in table order; native playback and visible reading. */
 const VnuCourseQueue = (() => {
   'use strict';
-  const PAGE_WAIT = 60000, STABLE_WAIT = 1000, REVIEW_WAIT = 60000, RETRY_WAIT = 15000;
+  const PAGE_WAIT = 60000, DISCOVERY_WAIT = 600000;
+  const STABLE_WAIT = 1000, REVIEW_WAIT = 60000, RETRY_WAIT = 15000;
   return class VnuCourseQueue {
     constructor(adapter) {
       this.a = adapter; this.running = false; this.phase = 'idle';
@@ -14,6 +15,7 @@ const VnuCourseQueue = (() => {
       this.editing=false;this.muteTried=false;this.mutedKeys=new Set();this.globalRetries=0;
       this.checkAfterGap=false;this.lastEligibleAt=null;this.pollPausedAt=null;
       this.attempts=new Map();this.playMissingAt=null;
+      this.observedRequired=new Map();this.completionSignature=null;this.auditSignature=null;this.menuAudit=null;this.menuScanState=null;
     }
     say(message) {this.a.status(message, this.running);}
     stop(message = 'Đã dừng. Bấm Bắt đầu để chọn mục bắt buộc chưa hoàn thành.') {
@@ -32,6 +34,7 @@ const VnuCourseQueue = (() => {
       this.continuous=this.a.continuous?.()===true;this.editing=false;
       this.muteTried=false;this.mutedKeys=new Set();
       this.attempts=new Map();this.playMissingAt=null;
+      this.observedRequired=new Map();this.completionSignature=null;this.auditSignature=null;this.menuAudit=null;this.menuScanState=null;
       this.report = null; this.reportAt = null; this.a.started?.();
       this.baseline = null; this.captureBaseline();
       if (this.sourceCourse !== course) {this.knownSources = new Map(); this.knownPages = new Map(); this.knownKinds = new Map(); this.sourceCourse = course;}
@@ -47,22 +50,52 @@ const VnuCourseQueue = (() => {
       if (item?.source) this.baseline = {video:item.video,source:item.source};
       this.pageBaseline = this.a.pageBaseline?.() || null;
     }
-    readProgress() {this.captureBaseline();this.enter('progress'); this.say('Đang đọc Tiến trình học tập để chọn mục sao đỏ chưa hoàn thành…');}
-    remember(item,reason,retryable=true) {
+    readProgress(keepAudit=false) {
+      if(!keepAudit)this.auditSignature=null;
+      this.captureBaseline();this.enter('progress');this.say('Đang đọc Tiến trình học tập để chọn mục sao đỏ chưa hoàn thành…');
+    }
+    remember(item,reason,retryable=true,detail={}) {
       const previous=this.deferred.get(item.key);
       const failures=(previous?.failures || 0)+1;
       this.deferred.set(item.key,{key:item.key,title:item.title,section:item.section,reason,failures,status:item.status,ambiguous:item.ambiguous,
-        state:retryable && failures<2?'retry-later':'needs-action'});
+        state:retryable && failures<2?'retry-later':'needs-action',...detail});
     }
-    defer(reason,retryable=true) {
+    defer(reason,retryable=true,detail={}) {
       if(!this.running || !this.target){this.stop(reason);return;}
-      this.remember(this.target,reason,retryable);
+      this.remember(this.target,reason,retryable,detail);
       this.review=null;this.checkpoint=null;this.needsReview=false;this.editing=false;
       this.awaitUser=false;this.clearCheck();this.a.cancelPlayback();this.a.pauseCurrent();
       this.readProgress();this.say('Đã ghi vào mục còn tồn: '+this.target.title+'. '+reason+' Đang tiếp tục nội dung khác…');
     }
-    fail(reason,retryable=true) {
-      if(this.continuous && this.target)this.defer(reason,retryable);else this.stop(reason);
+    fail(reason,retryable=true,detail={}) {
+      if(this.continuous && this.target)this.defer(reason,retryable,detail);else this.stop(reason);
+    }
+    waitForPrerequisites(blocked) {
+      const titles=blocked.titles || [];
+      const ready=titles.length && titles.every(title=>{
+        const matches=this.report.items.filter(row=>VnuLms.titleKey(row.title)===VnuLms.titleKey(title));
+        return matches.length===1 && matches[0].status==='complete';
+      });
+      const retry=ready && !(this.deferred.get(this.target.key)?.failures);
+      this.fail('LMS yêu cầu hoàn thành bài trước. '+blocked.message+(titles.length?' Cần: '+titles.join('; '):''),retry,
+        {waitFor:titles.length?'prerequisite':'unlock',prerequisiteTitles:titles,completionSignature:this.completionSignature,
+          state:retry?'retry-later':'waiting-prerequisite'});
+    }
+    ensureMenuAudit() {
+      if(!this.a.scanMenu || this.auditSignature===this.completionSignature)return false;
+      this.menuScanState={};this.enter('audit-content');
+      this.say('Đang kiểm tra các nhánh menu còn lại trước khi kết luận đã chạy hết…');return true;
+    }
+    reconcileMenu(report) {
+      if(!this.menuAudit || this.auditSignature!==this.completionSignature)return;
+      for(const [key,record] of this.deferred)if(record.fromMenu)this.deferred.delete(key);
+      const extras=VnuLms.unreportedMenuItems(this.menuAudit,report).filter(item=>
+        ![...this.deferred.values()].some(record=>record.waitFor==='report' && !record.fromMenu &&
+          VnuLms.titleKey(record.title)===VnuLms.titleKey(item.title) && (!record.section || item.path.includes(VnuLms.titleKey(record.section)))));
+      const records=[...extras.map((item,index)=>({...item,key:'menu:item:'+JSON.stringify([item.path,VnuLms.titleKey(item.title),index]),
+        reason:'Có sao đỏ trong menu nhưng chưa đối chiếu được với hàng tiến trình. Chưa thể xác nhận hoàn thành.',state:'needs-action'})),
+        ...this.menuAudit.blocked.map(item=>({...item,key:'menu:branch:'+item.key,reason:item.reason,state:'waiting-prerequisite'}))];
+      for(const record of records)this.deferred.set(record.key,{...record,section:record.path.join(' » '),failures:0,status:'unknown',fromMenu:true});
     }
     protectForm() {
       if(!this.running || this.target?.kind!=='interactive' || !['wait-content','viewing','manual'].includes(this.phase))return;
@@ -185,9 +218,21 @@ const VnuCourseQueue = (() => {
     }
     choose(report) {
       this.globalRetries=0;
+      const completed=JSON.stringify(report.items.filter(row=>row.status==='complete').map(row=>row.key).sort());
+      const changed=this.completionSignature!==null && completed!==this.completionSignature;
+      this.completionSignature=completed;
+      if(changed)this.auditSignature=null;
+      const requested=new Set([...this.deferred.values()].flatMap(record=>record.prerequisiteTitles || []).map(VnuLms.titleKey));
       for(const [key,record] of this.deferred) {
         const row=report.items.find(it=>it.key===key);
-        if(row && (row.status==='complete' || !row.required))this.deferred.delete(key);
+        if(row && (row.status==='complete' || !row.required && !requested.has(VnuLms.titleKey(row.title))))this.deferred.delete(key);
+        else if(row && record.waitFor==='report')this.deferred.delete(key);
+        else if(record.waitFor==='unlock' && record.completionSignature!==completed)this.deferred.delete(key);
+        else if(record.waitFor==='prerequisite' && record.completionSignature!==completed && record.prerequisiteTitles?.length &&
+          record.prerequisiteTitles.every(title=>{
+            const matches=report.items.filter(it=>VnuLms.titleKey(it.title)===VnuLms.titleKey(title));
+            return matches.length===1 && matches[0].status==='complete';
+          }))this.deferred.delete(key);
         else if(row && record.status==='unknown' && row.status==='incomplete' && !row.ambiguous)this.deferred.delete(key);
         else if(!row && record.ambiguous) {
           const matches=report.items.filter(it=>VnuLms.titleKey(it.title)===VnuLms.titleKey(record.title) &&
@@ -195,6 +240,10 @@ const VnuCourseQueue = (() => {
           if(matches.length===1 && !matches[0].ambiguous)this.deferred.delete(key);
         }
       }
+      for(const [key,old] of this.observedRequired)if(old.status!=='complete' && !report.items.some(row=>row.key===key) && !this.deferred.has(key))
+        this.remember(old,'Mục bắt buộc từng chưa hoàn thành hiện không có trong báo cáo; chưa thể xác nhận đã xong.',false,{waitFor:'report'});
+      for(const row of report.items)if(row.required)this.observedRequired.set(row.key,{...row});else this.observedRequired.delete(row.key);
+      this.reconcileMenu(report);
       if (this.review) {
         const previous = report.items.find(v => v.key === this.review.key);
         if (!previous || previous.status === 'unknown') {
@@ -236,26 +285,38 @@ const VnuCourseQueue = (() => {
       if (!report.requiredItems.length) {
         this.stop('Chưa nhận diện được mục sao đỏ trong bảng. Bấm Kiểm tra trang và gửi một hàng bắt buộc để điều chỉnh.');return;
       }
-      let choice = VnuLms.firstPending(report.requiredItems);
+      const priority=[];
+      for(const record of this.deferred.values())for(const title of record.prerequisiteTitles || []) {
+        const matches=report.items.filter(it=>VnuLms.titleKey(it.title)===VnuLms.titleKey(title));
+        if(matches.length===1 && !priority.some(it=>it.key===matches[0].key))priority.push(matches[0]);
+      }
+      const ordered=[...priority,...report.requiredItems.filter(it=>!priority.some(p=>p.key===it.key))];
+      let choice = VnuLms.firstPending(ordered);
       if(this.continuous) {
         // A deferred row remains incomplete. Exclusion only chooses another
         // usable item; neither the report nor the server status is rewritten.
         for(;;) {
-          const candidates=report.requiredItems.filter(it=>!this.deferred.has(it.key) || this.deferred.get(it.key).state==='retrying');
+          const candidates=ordered.filter(it=>!this.deferred.has(it.key) || this.deferred.get(it.key).state==='retrying');
           choice=VnuLms.firstPending(candidates);
           if(choice.kind!=='unknown' && choice.kind!=='ambiguous')break;
           this.remember(choice.item,choice.kind==='unknown'
             ? 'Trạng thái LMS chưa xác định: '+choice.item.statusText
             : 'Trùng cả tên lẫn mục chứa; chưa thể chọn liên kết an toàn.',false);
         }
+        if(choice.kind==='done' && this.ensureMenuAudit())return;
         if(choice.kind==='done' && this.deferred.size) {
           const retry=[...this.deferred.values()].some(record=>record.state==='retry-later');
           if(retry){this.enter('retry-wait');this.retryAt=this.a.now()+RETRY_WAIT;this.a.cancelPlayback();this.a.pauseCurrent();this.phaseMessage();}
-          else this.stop('Đã chạy hết các mục có thể xử lý tự động. Còn '+this.deferred.size+' mục chưa được LMS xác nhận; xem danh sách Mục còn tồn.');
+          else this.stop('Chưa hoàn thành. Còn '+this.deferred.size+' mục chưa được LMS xác nhận; xem danh sách Mục còn tồn.');
           return;
         }
       }
       if (choice.kind === 'done') {
+        if(this.ensureMenuAudit())return;
+        if(this.deferred.size){this.stop('Còn '+this.deferred.size+' mục hoặc nhánh chưa được xác minh; xem Mục còn tồn.');return;}
+        if(this.menuAudit && !this.menuAudit.available){
+          this.stop('LMS ghi Đã hoàn thành cho tất cả mục có sao đỏ trong bảng, nhưng chưa nhận diện hoặc chưa thấy menu để kiểm tra hết mục con. Chưa xác nhận toàn bộ môn; kiểm tra menu và bài kiểm tra trên LMS.');return;
+        }
         this.stop('LMS ghi Đã hoàn thành cho tất cả mục có sao đỏ trong bảng. Kiểm tra điểm, bài kiểm tra và các điều kiện của môn trên LMS.'); return;
       }
       if (choice.kind === 'unknown') {
@@ -296,7 +357,7 @@ const VnuCourseQueue = (() => {
         this.defer('LMS chưa ghi tăng phút sau 3 lần kiểm tra và đã hết khoảng chờ theo ngưỡng của mục này.');return;
       }
       this.scheduleCheck();
-      this.attemptedFolders = new WeakSet(); this.lastExpansionAt = null;
+      this.attemptedFolders = new WeakSet();this.expandedPaths=new Set();this.lastExpansionAt = null;
       this.enter('content'); this.say('Đang mở mục sao đỏ chưa hoàn thành đầu tiên: ' + this.target.title);
     }
     handleView(outcome, name) {
@@ -312,6 +373,8 @@ const VnuCourseQueue = (() => {
         progress:'Đang đọc Tiến trình học tập để chọn mục sao đỏ chưa hoàn thành…',
         refresh:'Đang mở lại tiến trình để đọc phút do LMS ghi nhận…',
         content:'Đang mở tab Nội dung…',
+        'audit-content':'Đang mở Nội dung để kiểm tra mọi nhánh menu còn lại…',
+        audit:'Đang đối chiếu cây menu; đã mở '+(this.menuScanState?.expanded || 0)+' nhánh trong lượt kiểm tra này…',
         open:'Đang tìm liên kết nội dung. Đã mở ' + this.expansions + ' mục thu gọn; chờ ' + seconds + ' giây…',
         'wait-video':'Đang chờ đúng video tải lên (' + seconds + ' / 60 giây)…',
         'wait-content':'Đang chờ đúng nội dung hiển thị (' + seconds + ' / 60 giây)…',
@@ -343,6 +406,10 @@ const VnuCourseQueue = (() => {
         for (const field of ['phaseAt', 'requestAt', 'stableAt', 'reviewAt', 'lastExpansionAt','pageMissingAt','retryAt','nextCheckAt','pollPausedAt','playMissingAt'])
           if (typeof this[field] === 'number') this[field] += away;
         this.awayAt = null;
+        if(this.phase==='audit' && this.menuScanState) {
+          for(const map of [this.menuScanState.attempts,this.menuScanState.emptySince])if(map)for(const [key,value] of map)map.set(key,value+away);
+          if(typeof this.menuScanState.stableAt==='number')this.menuScanState.stableAt+=away;
+        }
         this.phaseMessage();
       }
       if(this.phase==='retry-wait') {
@@ -355,18 +422,28 @@ const VnuCourseQueue = (() => {
         }
         return;
       }
+      if (['wait-video','wait-content'].includes(this.phase) && now-this.phaseAt>=750) {
+        const blocked=this.a.blocker?.(this.target.title);
+        if(blocked?.kind==='prerequisite'){this.waitForPrerequisites(blocked);return;}
+        const unavailable=blocked?.message || this.a.availability?.(this.target.title);
+        if(unavailable){this.fail('LMS chưa mở nội dung này. '+unavailable,false);return;}
+      }
       // Inspect a verified native player before expiring a wait for a generic
       // page. The browser may deliver the first callback after the load budget.
       if(this.phase==='wait-content' && now-this.phaseAt>=750 && this.recognizeVideo())return;
-      if (!['playing','await-play','viewing','manual'].includes(this.phase) && now - this.phaseAt > PAGE_WAIT) {
+      if(['audit','open'].includes(this.phase) && now-this.phaseAt>DISCOVERY_WAIT) {
+        this.stop('Chưa kiểm tra xong cây menu sau 10 phút; không xác nhận đã hoàn thành. Bấm Kiểm tra trang để lấy báo cáo.');return;
+      }
+      if (!['playing','await-play','viewing','manual','audit'].includes(this.phase) && now - (this.phase==='open'?(this.lastExpansionAt ?? this.phaseAt):this.phaseAt) > PAGE_WAIT) {
         if(this.continuous && this.phase==='progress' && this.globalRetries++<2) {
           this.enter('refresh');this.say('Bảng LMS chưa tải xong; đang thử mở lại tab tiến trình ('+this.globalRetries+'/2)…');return;
         }
-        if(this.phase==='progress' || this.phase==='content' || this.phase==='refresh') {
+        if(this.phase==='progress' || this.phase==='content' || this.phase==='audit-content' || this.phase==='refresh') {
           this.stop('Không đọc/mở được tab lớp sau 1 phút. Kiểm tra kết nối hoặc phiên đăng nhập.');return;
         }
         this.fail(['wait-video','wait-content'].includes(this.phase)
           ? 'Chưa xác nhận được đúng nội dung đã mở. Bấm Kiểm tra trang và gửi báo cáo để điều chỉnh nhận diện.'
+          : this.phase==='open' ? 'Menu không có tiến triển trong 1 phút. Bấm Kiểm tra trang để lấy đối chiếu các mục con.'
           : 'Không đọc/mở được bài sau 1 phút. Kiểm tra kết nối, tab Nội dung và Tiến trình học tập.'); return;
       }
       if (this.phase === 'progress') {
@@ -389,6 +466,19 @@ const VnuCourseQueue = (() => {
         if (now - this.requestAt >= 1000) this.readProgress();
         return;
       }
+      if(this.phase==='audit-content') {
+        this.phaseMessage();this.a.pauseCurrent();
+        if(!this.requested && !this.handleView(this.a.contentTab(),'Nội dung'))return;
+        if(now-this.requestAt>=500)this.enter('audit');return;
+      }
+      if(this.phase==='audit') {
+        this.phaseMessage();this.a.pauseCurrent();
+        const audit=this.a.scanMenu(this.menuScanState);
+        if(audit.kind!=='ready')return;
+        this.menuAudit={available:audit.available,items:audit.items,expanded:audit.expanded,
+          blocked:audit.blocked.map(({title,path,key,reason})=>({title,path,key,reason}))};
+        this.auditSignature=this.completionSignature;this.readProgress(true);return;
+      }
       if (this.phase === 'content') {
         this.phaseMessage();
         if (!this.requested && !this.handleView(this.a.contentTab(), 'Nội dung')) return;
@@ -409,14 +499,16 @@ const VnuCourseQueue = (() => {
         const known=this.knownPages.get(this.target.key);
         const active = selectedBefore && (video ? before?.source && this.knownSources.get(this.target.key) === before.source
           : before?.ready && this.samePage(before,known));
-        const outcome = active ? 'active' : this.a.openItem(this.target.title, {...this.target, attempted:this.attemptedFolders});
+        const outcome = active ? 'active' : this.a.openItem(this.target.title, {...this.target, attempted:this.attemptedFolders,expandedPaths:this.expandedPaths});
         if (outcome === 'clicked' || outcome === 'active') {
           this.before = mediaBefore ? {video:mediaBefore.video,source:mediaBefore.source} : null;
           this.beforePage = !video ? before : null;
           this.selectedBefore = selectedBefore;
           this.enter(video?'wait-video':'wait-content'); return;
         }
-        if (outcome === 'expanded' && ++this.expansions <= 64) {this.lastExpansionAt = now; return;}
+        if (outcome === 'expanded') {
+          this.expansions++;this.lastExpansionAt = now;return;
+        }
         if (outcome === 'expanding') {
           if (now - this.lastExpansionAt < 5000) {this.say('Đã bấm mở mục; đang chờ danh sách bài xuất hiện…'); return;}
           this.fail('Mục thu gọn chưa mở sau 5 giây. Bấm mũi tên trong menu bên trái rồi Bắt đầu lại.'); return;
@@ -427,7 +519,8 @@ const VnuCourseQueue = (() => {
         }
         this.fail(outcome === 'ambiguous' ? 'Có nhiều liên kết nội dung trùng tên; chưa xác định được bài đúng.'
           : outcome === 'disabled' ? 'Mục bắt buộc chưa hoàn thành đầu tiên đang bị khóa. Hoàn thành điều kiện mở bài trên LMS.'
-          : 'Nội dung nằm trong mục đang thu gọn. Mở rộng mục chứa bài, rồi bấm Bắt đầu.'); return;
+          : 'Nội dung nằm trong mục đang thu gọn. Mở rộng mục chứa bài, rồi bấm Bắt đầu.',true,
+          outcome==='disabled'?{waitFor:'unlock',completionSignature:this.completionSignature}:{}); return;
       }
       if (this.phase === 'wait-content') {
         this.phaseMessage();this.a.pauseCurrent();

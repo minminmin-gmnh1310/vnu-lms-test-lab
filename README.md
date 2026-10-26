@@ -1,13 +1,13 @@
-# VNU LMS Test Lab 1.0.2
+# VNU LMS Test Lab 1.0.4
 
-Bộ kiểm thử riêng cho **VNU LMS Player 0.8.2**, chạy trên máy ảo GitHub Actions.
+Bộ kiểm thử riêng cho **VNU LMS Player 0.8.4**, chạy trên máy ảo GitHub Actions.
 Bạn không cần mở laptop suốt lượt chạy và không cần đưa tài khoản VNU vào máy ảo.
 
 ## Vì sao test nhanh được?
 
 Hai cách rút thời gian trong lab:
 
-- **307 ca Node/DOM/server và thiết lập trình duyệt:** gồm 304 ca trước đây và 3 ca kiểm tra khởi động/kết nối/dọn tiến trình bằng process giả. Các ca mới không chạy trình duyệt. Tình huống chờ nhiều phút được thử nhanh bằng đồng hồ và dữ liệu mô phỏng.
+- **364 ca Node/DOM/server và thiết lập trình duyệt:** gồm 348 ca của tool, 11 ca server, 3 ca thiết lập bằng process giả và 2 ca DOM của trang lab. Các ca này không chạy trình duyệt. Tình huống chờ nhiều phút được thử nhanh bằng đồng hồ và dữ liệu mô phỏng.
 - **Trình duyệt thật:** nạp bốn tệp JavaScript gốc của tool, chạy với video WebM tự tạo dài 4 giây và bài mô phỏng chỉ yêu cầu **1.5 giây**. Video vẫn phát native ở 1x. Không tăng tốc thời gian hoặc sửa yêu cầu của LMS VNU.
 
 Máy ảo không làm đồng hồ trên server trường chạy nhanh hơn. Muốn xác minh VNU lưu phút thật vẫn cần một lượt kiểm tra trên VNU theo thời gian thật.
@@ -52,7 +52,7 @@ Các lựa chọn:
 
 | Lựa chọn | Mục đích |
 | --- | --- |
-| `unit` | 295 ca của tool + 9 ca server + 3 ca thiết lập; không tải trình duyệt |
+| `unit` | 348 ca của tool + 11 ca server + 3 ca thiết lập + 2 ca DOM lab; không tải trình duyệt |
 | `browser` | Ba kịch bản trình duyệt thật, không chạy lại bộ unit |
 | `all` | Chạy cả hai tầng; dùng cho lượt đầu |
 | `ubuntu-latest` | Máy ảo Ubuntu, Chromium có desktop ảo để kiểm tra đổi tab |
@@ -80,7 +80,7 @@ Gửi lại ZIP kết quả, không chỉ ảnh dấu tích xanh. Nếu lỗi x�
 
 ## Những gì lab kiểm tra
 
-Kịch bản `pipeline`: bỏ mục tùy chọn và mục đã hoàn thành; qua bài đọc, video có tên khác mẫu, iframe khảo sát tự focus, video tiếp theo, tài liệu nhúng và bài đọc có chữ thay đổi. Tổng trạng thái hoàn thành đến từ **server mô phỏng độc lập**, không lấy bộ đếm của tiện ích làm trạng thái server.
+Kịch bản `pipeline`: mở menu con bốn cấp được dựng khi bấm mũi tên, ưu tiên nhánh Bài 2 / 2.2 / 2.2.1, kiểm tra đủ sáu mũi tên, gồm nhánh chỉ được mở ở lượt đối chiếu cuối và không bấm nhầm tên thư mục; nhận một lá native thiếu href; bỏ mục tùy chọn và mục đã hoàn thành; qua bài đọc, video có tên khác mẫu, iframe khảo sát tự focus, video tiếp theo, tài liệu nhúng và bài đọc có chữ thay đổi. Khảo sát bị khóa cho tới khi video phía sau hoàn thành: tool phải đọc danh sách điều kiện, phát video, rồi quay lại khảo sát. Lượt mở dự kiến là `[2,3,4,5,4,6,7]`; browser test bắt buộc thấy chuỗi gate 4 -> bài trước 5 -> quay lại 4, cho phép mở lại cùng bài khi đọc lại tiến trình; server tự chặn cấp phút cho mục bị khóa, không tin trạng thái do tiện ích gửi. Tổng trạng thái hoàn thành đến từ **server mô phỏng độc lập**, không lấy bộ đếm của tiện ích làm trạng thái server.
 
 Kịch bản `controls`: video native 1x; resize sang cửa sổ hẹp; Pause/Play bằng bàn phím; Dừng và Bắt đầu lại. Từng bước có kết quả riêng trong báo cáo.
 
@@ -101,24 +101,22 @@ Runtime JavaScript được giữ nguyên. Lab tạo bản sao manifest chỉ ch
 
 ### Trạng thái xác minh khi giao gói
 
-- Đã chạy **307/307 ca Node/DOM/server và thiết lập** và kiểm tra cú pháp mã lab.
-- Đã kiểm tra mô hình server và dữ liệu media, cấu trúc workflow, bản sao mã gốc.
-- Kết quả GitHub Actions do người dùng gửi ngày 26/10/2026, với bản lab 1.0.0: **304/304** test logic đạt; `pipeline` đạt đủ 7/7, lượt ghé `[2,3,4,5,6,7]`, không nộp biểu mẫu; `controls` dừng ở bước chờ tab ẩn. Trace xác nhận đã gọi `bringToFront` trước khi timeout. Bản Playwright 1.64.1 cài trong lab có lệnh bật focus emulation mặc định; thiết lập test cũ chưa tắt nó.
-- Kết quả GitHub của bản 1.0.1 do người dùng gửi: **304/304**, `pipeline` và cả ba bước `controls` đạt; `visibility` vẫn lỗi vì trang visible dù focused=false, không có sự kiện visibility. Hai kịch bản đạt chạy trên Linux, Chromium 156.0.8078.4. Chưa xác minh Microsoft Edge/Windows hoặc server VNU.
-- Bản 1.0.2 sửa cách kết nối đầu tiên nêu trên; bốn tệp JavaScript gốc của tool không thay đổi.
-- **Chưa chạy lại ba kịch bản Chromium của bản 1.0.2.** Cần đẩy bản cập nhật lên GitHub rồi chọn Run workflow mới, `suite=all`. Không dùng Re-run của lượt cũ vì lượt đó giữ commit cũ.
+- Đã chạy **364/364 ca Node/DOM/server và thiết lập**: 348 của player, 11 của server, 3 thiết lập bằng process giả và 2 DOM của trang lab. Mã qua kiểm tra cú pháp.
+- Bản lab 1.0.2/runtime 0.8.2 người dùng gửi đã qua 307/307 Node và ba kịch bản Chromium/Linux. Kết quả này không xác nhận các bản mới.
+- Bản 1.0.4/runtime 0.8.4 thêm đọc gate bài trước, chuỗi điều kiện, kiểm tra nhánh sâu và đối chiếu mọi nhánh trước khi dừng. Pipeline mới phải mở khảo sát, xử lý video mà nó yêu cầu, rồi quay lại; còn xác minh nhánh đầu khóa đã được mở khi đối chiếu cuối.
+- **Chưa chạy Chromium cho lab 1.0.4** trong môi trường xây dựng. Cần một lượt GitHub mới. Không tuyên bố đã chạy Edge/Windows hay tài khoản VNU thật.
 
 ### Cập nhật repository đã tạo
 
-Giải nén gói 1.0.2 và chép đè nội dung vào thư mục repo cũ (giữ thư mục `.git`). Mở PowerShell trong repo rồi chạy:
+Giải nén gói 1.0.4 và chép đè nội dung vào repo cũ, giữ `.git`. Mở PowerShell trong repo:
 
 ```powershell
-git add lab package.json package-lock.json README.md BAT-DAU.txt BUILD-VERIFICATION.json
-git commit -m "Use native visibility without initial focus emulation"
+git add vnu-lms-player lab package.json package-lock.json README.md BAT-DAU.txt BUILD-VERIFICATION.json
+git commit -m "Verify deep menus and prerequisite recovery with player 0.8.4"
 git push
 ```
 
-Sau đó Actions -> VNU LMS isolated tests -> Run workflow, nhánh main, suite=all. Tải artifact mới để kiểm tra cả ba kết quả pipeline/controls/visibility.
+Sau đó Actions -> VNU LMS isolated tests -> Run workflow mới -> main -> suite=all. Không dùng Re-run lượt cũ vì giữ commit cũ. Tải artifact mới để kiểm tra pipeline/controls/visibility; pipeline phải có menuEvents và lessonOpens đúng thứ tự nêu trên.
 
 ## Nếu muốn chạy cục bộ
 

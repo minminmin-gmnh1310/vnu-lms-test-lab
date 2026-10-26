@@ -10,7 +10,7 @@
   const box=document.createElement('section');box.className='box';
   style.textContent+=' .controls{display:flex;flex-wrap:wrap;gap:6px}.controls button{margin:0}#diagnose{background:#315c74}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;background:#f4f6f8;padding:10px;font:12px/1.5 monospace}.folded pre,.folded details{display:none}details{margin:8px 0;font-size:12px}summary{cursor:pointer;color:#8a2455}ul{padding-left:18px}li{margin:6px 0;overflow-wrap:anywhere}';
   style.textContent+=' .compact{padding:10px;font-size:12px}.compact h3{font-size:14px}.compact p{margin:5px 0}.compact #status{max-height:4.5em;overflow:auto}.compact .timing{padding:8px;margin:6px 0}.compact .timing dt,.compact .timing small{font-size:11px}.compact button{padding:7px 9px;font-size:12px}.controls{position:sticky;bottom:-15px;background:#fff;padding:5px 0;z-index:1}.compact .controls{bottom:-10px}#options summary{color:#315c74}';
-  const heading=document.createElement('h3');heading.textContent='VNU · Nội dung bắt buộc 0.8.2';
+  const heading=document.createElement('h3');heading.textContent='VNU · Nội dung bắt buộc 0.8.4';
   const fold=document.createElement('button');fold.className='fold';fold.textContent='−';fold.setAttribute('aria-label','Thu gọn bảng điều khiển');
   const status=document.createElement('p');status.id='status';status.setAttribute('role','status');
   const engine=document.createElement('p');engine.id='engine';
@@ -25,8 +25,9 @@
   const lmsState=document.createElement('small');lmsState.id='lms-state';
   const lmsRead=document.createElement('small');lmsRead.id='lms-read';
   const requiredSummary=document.createElement('small');requiredSummary.id='required-summary';
+  const menuState=document.createElement('small');menuState.id='menu-state';
   const units=document.createElement('small');units.textContent='Thời gian hiển thị theo phút:giây.';
-  timing.append(lesson,requiredSummary,metrics,bar,position,lmsState,lmsRead,units);
+  timing.append(lesson,requiredSummary,menuState,metrics,bar,position,lmsState,lmsRead,units);
   const buttons=document.createElement('p');buttons.className='controls';
   const start=document.createElement('button');start.id='start';start.textContent='Bắt đầu';start.type='button';
   const stop=document.createElement('button');stop.id='stop';stop.textContent='Dừng';stop.type='button';
@@ -120,6 +121,9 @@
     openItem:(title,options)=>VnuLms.openItem(document,title,visible,options),
     selected:(title,options)=>VnuLms.selected(document,title,visible,options),
     viewerMatches:title=>VnuLms.viewerMatches(document,title,visible),
+    availability:title=>VnuLms.availability(document,title,visible),
+    blocker:title=>VnuLms.blocker(document,title,visible),
+    scanMenu:state=>VnuLms.scanMenu(document,visible,performance.now(),state),
     ensureVisible:ensureContentVisible,
     pauseCurrent,
     cancelPlayback:()=>controller.stop(),beginPlayback:()=>controller.start(),
@@ -149,7 +153,7 @@
   };
   const duration=(seconds,remaining=false)=>Number.isFinite(seconds)
     ? VnuPlayer.format(Math.max(0,remaining?Math.ceil(seconds):seconds)):'--:--';
-  const phaseNames={idle:'Đã dừng',progress:'Đọc tiến trình',refresh:'Cập nhật LMS',content:'Mở Nội dung',open:'Mở danh sách bài','wait-video':'Tải đúng video','wait-content':'Tải đúng nội dung',playing:'Phát video',viewing:'Hiển thị nội dung bắt buộc',manual:'Chờ bạn thực hiện','await-play':'Chờ bạn bấm Play · video chưa chạy','retry-wait':'Chờ thử lại mục còn tồn'};
+  const phaseNames={idle:'Đã dừng',progress:'Đọc tiến trình',refresh:'Cập nhật LMS',content:'Mở Nội dung',open:'Mở danh sách bài','audit-content':'Mở menu để đối chiếu',audit:'Kiểm tra mọi nhánh menu','wait-video':'Tải đúng video','wait-content':'Tải đúng nội dung',playing:'Phát video',viewing:'Hiển thị nội dung bắt buộc',manual:'Chờ bạn thực hiện','await-play':'Chờ bạn bấm Play · video chưa chạy','retry-wait':'Chờ thử lại mục còn tồn'};
   let pendingSignature='';
   render=()=>{
     const now=performance.now(),item=snapshot();
@@ -164,10 +168,16 @@
     requiredSummary.textContent=mandatory?'Mục sao đỏ: '+mandatory.filter(v=>v.status==='complete').length+' / '+mandatory.length+' đã hoàn thành.':'Chưa đọc danh sách mục sao đỏ.';
     const waiting=[...queue.deferred.values()];pending.hidden=!waiting.length;
     pendingSummary.textContent='Mục còn tồn: '+waiting.length+' · chưa được LMS xác nhận';
+    const unverified=waiting.filter(it=>it.fromMenu).length;
+    menuState.textContent=['audit-content','audit'].includes(queue.phase)
+      ? 'Đang kiểm tra phần menu còn lại; chưa kết luận đã chạy hết.'
+      : unverified?'Còn '+unverified+' mục hoặc nhánh menu chưa đối chiếu được.'
+      : queue.menuAudit?.available && queue.auditSignature===queue.completionSignature?'Đã đối chiếu các nhánh menu tải được với bảng tiến trình.'
+      :'Menu chưa được đối chiếu toàn bộ trong lượt này.';
     const signature=JSON.stringify(waiting.map(it=>[it.key,it.reason,it.failures,it.state]));
     if(signature!==pendingSignature) {
       pendingSignature=signature;pendingList.replaceChildren();
-      for(const it of waiting){const li=document.createElement('li');li.textContent=it.title+(it.section?' ['+it.section+']':'')+' — '+it.reason+' '+(it.state==='retry-later'?'Sẽ thử lại sau.':it.state==='retrying'?'Đang thử lại.':'Cần xử lý trên LMS.');pendingList.append(li);}
+      for(const it of waiting){const li=document.createElement('li');li.textContent=it.title+(it.section?' ['+it.section+']':'')+' — '+it.reason+' '+(it.state==='retry-later'?'Sẽ thử lại sau.':it.state==='retrying'?'Đang thử lại.':it.state==='waiting-prerequisite'?'Đang chờ điều kiện mở bài.':'Cần xử lý trên LMS.');pendingList.append(li);}
     }
     if(waiting.length && !queue.running)pending.open=true;
     root.getElementById('watch-label').textContent=target && target.kind!=='video'?'Hiển thị tại máy · phiên này':'Phát tại máy · phiên này';
@@ -213,7 +223,7 @@
   diagnose.addEventListener('click',()=>{
     const id=++diagnosticRun,item=snapshot();
     const lines=[
-      'VNU Player 0.8.2 — kiểm tra trang',
+      'VNU Player 0.8.4 — kiểm tra trang',
       'Trang học: '+(inCourse()?'có':'không'),
       'Trang còn hiển thị: '+(document.visibilityState==='visible'?'có':'không'),
       'LMS có focus thật: '+(document.hasFocus()?'có':'không'),
@@ -239,6 +249,8 @@
       'Số mục đã bấm mở: '+(queue.expansions || 0));
     lines.push('Chạy liên tục: '+(queue.continuous?'có':'không'),'Mục còn tồn: '+queue.deferred.size,
       'Đang giữ biểu mẫu: '+(queue.editing?'có':'không'),'Lịch đọc dự phòng: '+(queue.checkAfterGap?'đang dùng':'chưa cần'));
+    lines.push('Đối chiếu cây menu: '+menuState.textContent,
+      'Nhánh đã mở trong lượt đối chiếu: '+(queue.menuScanState?.expanded || 0));
     for(const it of queue.deferred.values())lines.push('Còn tồn: '+it.title+' | '+(it.section || 'mục gốc')+' | '+it.reason+' | lỗi '+it.failures+'/2 | '+it.state);
     const latestReport=table.kind==='ready'?table:queue.report;
     if(latestReport)lines.push('Báo cáo gần nhất: '+latestReport.items.length+' nội dung / '+latestReport.requiredItems.length+' mục sao đỏ',
@@ -259,6 +271,21 @@
       'Nội dung đang hiện đúng: '+(queue.target.kind==='video'?'xem trạng thái video':pageSnapshot(queue.target.title,queue.target.kind==='interactive')?.ready?'có':'chưa xác nhận'),
       'Còn lại ước tính: '+values.estimated.textContent,
       'Thông báo hiện tại: '+status.textContent);
+    const menu=document.getElementById('tnContentList');
+    if(menu && latestReport) {
+      const candidates=VnuLms.links(document);
+      lines.push('Đối chiếu menu con với bảng LMS:');
+      for(const row of latestReport.requiredItems.filter(it=>it.status!=='complete')) {
+        const exact=VnuLms.links(document,row.title),scoped=VnuLms.itemLinks(document,row.title,row);
+        lines.push(JSON.stringify({title:row.title,section:row.section,titleDuplicate:row.titleDuplicate,
+          nameMatches:exact.length,sectionMatches:scoped.length,visibleMatches:scoped.filter(visible).length}));
+      }
+      lines.push('Tên mục trong menu đã nhận diện: '+JSON.stringify(candidates.map(a=>VnuLms.titleText(a))),
+        'Nhãn a chưa nhận diện trong menu: '+JSON.stringify([...menu.querySelectorAll('a')].filter(a=>!candidates.includes(a))
+          .map(a=>({title:VnuLms.titleText(a),hrefKind:!a.hasAttribute('href')?'absent':
+            /^javascript:/iu.test(a.getAttribute('href'))?'javascript':a.getAttribute('href')==='#'?'hash':'other',
+            parentClass:a.parentElement?.className}))));
+    }
     if (item) lines.push(
       'Nguồn đã tải đúng: '+(item.ready?'có':'chưa'),
       'readyState: '+item.video.readyState,
@@ -310,7 +337,7 @@
   const nativeInteraction=event=>{
     if(!event.isTrusted)return;
     const target=event.target;
-    const link=target?.closest?.('a[href]');
+    const link=target?.closest?.('a');
     if(target instanceof HTMLVideoElement && target.id==='TNContentView')manualHold=false;
     else if(link && VnuLms.links(document).includes(link)){
       manualHold=false;pendingVisit=false;
@@ -362,6 +389,7 @@
       if(controller.running)controller.stop('Đã chuyển lớp học.');
       queue.target=null;queue.report=null;queue.reportAt=null;watch.reset();
       queue.deferred=new Map();queue.thresholdChecks=new Map();queue.mutedKeys=new Set();queue.editing=false;
+      queue.observedRequired=new Map();queue.completionSignature=null;queue.auditSignature=null;queue.menuAudit=null;queue.menuScanState=null;
       lastCourse=course;pendingVisit=!!course;manualHold=false;
     }
     if(prefsReady && pendingVisit) {pendingVisit=false;if(auto.checked)queue.start();}

@@ -29,7 +29,7 @@ async function main(){
  const extension=path.join(work,'extension');fs.mkdirSync(extension);
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'vnu-lms-player','manifest.json'),'utf8'));
  const report={mode:'REAL CHROMIUM + LOCAL MOCK LMS',vnuServerTested:false,windowsEdgeTested:false,environment:{os:process.platform,node:process.version},startedAt:new Date().toISOString(),runtimeVersion:manifest.version,
-  labVersion:'1.0.2',requirementsSeconds:1.5,browser:null,runtimeHashes:{},cases:[],setupError:null};
+  labVersion:'1.0.4',requirementsSeconds:1.5,browser:null,runtimeHashes:{},cases:[],setupError:null};
  try {
   for(const name of scripts){const source=path.join(root,'vnu-lms-player',name);fs.copyFileSync(source,path.join(extension,name));report.runtimeHashes[name]=hash(source);assert.equal(hash(source),hash(path.join(extension,name)));}
   // Chromium match patterns use host names without ports; network routing
@@ -42,7 +42,13 @@ async function main(){
     const summary=lab.models.get('pipeline').summary();assert.deepEqual(summary.visits,[2,3,4,5,6,7]);assert.equal(summary.submissions,0);
     assert.ok(summary.items.filter(x=>x.required).every(x=>x.status==='Đã hoàn thành'));
     await page.waitForFunction(()=>document.getElementById('vnu-lecture-helper').shadowRoot.getElementById('engine').textContent.includes('Đã dừng'));
-    assert.equal(await panel(page,'pending').isVisible(),false);return summary;
+    assert.equal(await panel(page,'pending').isVisible(),false);
+    entry.menuEvents=await page.evaluate(()=>window.__vnuLabMenuEvents);
+    assert.deepEqual(entry.menuEvents.map(x=>x.title),['Bài 2. Nội dung bắt buộc','2.2 Nội dung','2.2.1 Bài giảng','2.2.2 Hoạt động','2.2.3 Tài liệu','Bài 1. Mục trước']);
+    entry.lessonOpens=await page.evaluate(()=>window.__vnuLabLessonOpens);
+    const gated=entry.lessonOpens.indexOf(4),prerequisite=entry.lessonOpens.indexOf(5,gated+1),returned=entry.lessonOpens.indexOf(4,prerequisite+1);
+    assert.ok(gated>=0 && prerequisite>gated && returned>prerequisite,'Must open the gate, complete its prerequisite, then return; ordinary rereads may reopen the same activity');
+    assert.ok(entry.menuEvents.every(x=>x.type==='expand'));return summary;
    }],
    ['controls','controls',async(page,context,entry)=>{
     await step(entry,'resize and native video at 1x',async()=>{

@@ -11,7 +11,7 @@ const VnuLms = (() => {
     }
     return normalize(value).replace(/\s*[*★]+\s*$/u, '').trim();
   };
-  const titleKey = value => key(titleText(value)).replace(/^[^\p{L}\p{N}]+/u, '');
+  const titleKey = value => key(titleText(value).replace(/[\u200b\ufeff\u00ad]/gu, '')).replace(/^[^\p{L}\p{N}]+/u, '');
   const headingTitle = element => {
     const copy = element.cloneNode(true);
     // Native heading appends a nested span with (course title). Strip that
@@ -19,6 +19,11 @@ const VnuLms = (() => {
     for (const child of [...copy.children])
       if (child.tagName === 'SPAN' && /^\(.*\)$/u.test(normalize(child.textContent))) child.remove();
     return titleText(copy);
+  };
+  const headingMatches = (element,title) => {
+    const actual=headingTitle(element),expected=titleKey(title);
+    return titleKey(actual)===expected || actual.split(/\s+»\s+/u)
+      .some((_,index,parts)=>index>0 && titleKey(parts.slice(index).join(' » '))===expected);
   };
   const required = element => !!element.querySelector('.content-required') || /[*★]\s*$/u.test(normalize(element.textContent));
   const kind = title => /^video(?:\s*\d+)?\s*:|^học liệu\s*\d+\s*\(video\)\s*:/iu.test(titleText(title)) ? 'video'
@@ -128,17 +133,26 @@ const VnuLms = (() => {
   }
   function links(document, title) {
     const sidebar = document.getElementById?.('tnContentList');
-    return [...(sidebar || document).querySelectorAll('a[href]')].filter(a =>
-      /^javascript:\s*void\s*\(\s*0\s*\)\s*;?$/iu.test(a.getAttribute('href')) &&
-      (title ? titleKey(a) === titleKey(title) : sidebar ? !!titleText(a)
-        : kind(titleText(a))==='video' || required(a) || !!a.closest('.__lesson-name,.__lesson-name-child')));
+    const nativeSidebar=sidebar || document.closest?.('#tnContentList');
+    return [...(sidebar || document).querySelectorAll('a')].filter(a => {
+      const href=normalize(a.getAttribute('href'));
+      const native=a.parentElement?.matches('.__lesson-name') &&
+        ![...a.parentElement.children].some(e=>e.matches('span.arrow'));
+      // Support nested native labels without href only in a leaf
+      // heading of the LMS sidebar, never folder titles or external links.
+      const control=/^javascript:\s*void\s*\(\s*0\s*\)\s*;?$/iu.test(href) ||
+        nativeSidebar && native && (!href || href==='#' || /^javascript:\s*;?$/iu.test(href));
+      return control &&
+      (title ? titleKey(a) === titleKey(title) : nativeSidebar ? !!titleText(a)
+        : kind(titleText(a))==='video' || required(a) || !!a.closest('.__lesson-name,.__lesson-name-child'));
+    });
   }
   function linkSections(link, sidebar) {
     const sections=[];
     for (let node=link.parentElement;node && node!==sidebar;node=node.parentElement) {
       // Native expanded folders put their own heading beside the descendant
       // content subtree. Do not read headings from unrelated nested folders.
-      const heads=[...node.children].filter(e=>e.matches('.__lesson-name-child') &&
+      const heads=[...node.children].filter(e=>e.matches('.__lesson-name,.__lesson-name-child') &&
         [...e.children].some(child=>child.matches('span.arrow')) && !e.contains(link));
       if (heads.length===1) sections.push(titleKey(heads[0].querySelector('a')));
     }
@@ -146,10 +160,10 @@ const VnuLms = (() => {
   }
   function itemLinks(document,title,options={}) {
     const matches=links(document,title);
-    if (!options.titleDuplicate) return matches;
-    if (!options.section) return [];
+    if (!options.section) return options.titleDuplicate ? [] : matches;
     const sidebar=document.getElementById?.('tnContentList');
-    return matches.filter(a=>linkSections(a,sidebar).includes(titleKey(options.section)));
+    const scoped=matches.filter(a=>linkSections(a,sidebar).includes(titleKey(options.section)));
+    return scoped.length || options.titleDuplicate ? scoped : matches;
   }
   function selected(document, title, visible, options={}) {
     const matches = itemLinks(document, title, options).filter(visible);
@@ -168,21 +182,21 @@ const VnuLms = (() => {
     const nativeHead = document.querySelectorAll('#tnContentView .headcontent .col-md-10 > span');
     // An identical title in the viewer cannot distinguish two different folders.
     if (options.titleDuplicate) return false;
-    if ([...nativeHead].some(e=>e.id!=='tnContentButton' && visible(e) && titleKey(headingTitle(e))===titleKey(title))) return true;
+    if ([...nativeHead].some(e=>e.id!=='tnContentButton' && visible(e) && headingMatches(e,title))) return true;
     return [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].some(h => visible(h) &&
       (titleKey(h) === titleKey(title) || titleKey(h) === plainTitle));
   }
   function viewerMatches(document, title, visible) {
     const container=document.getElementById('tnContentView');
     return !!container && visible(container) && [...container.querySelectorAll('.headcontent .col-md-10 > span,h1,h2,h3,h4,h5,h6')]
-      .some(e=>e.id!=='tnContentButton' && visible(e) && titleKey(headingTitle(e))===titleKey(title));
+      .some(e=>e.id!=='tnContentButton' && visible(e) && headingMatches(e,title));
   }
   function pageSnapshot(document, title, visible, interactive = false) {
     const container=document.getElementById('tnContentView');
     if (!container || !visible(container)) return null;
     const heads=[...container.querySelectorAll('.headcontent .col-md-10 > span,h1,h2,h3,h4,h5,h6')]
       .filter(e=>e.id!=='tnContentButton' && visible(e) && headingTitle(e));
-    const head=title ? heads.find(e=>titleKey(headingTitle(e))===titleKey(title)) : heads[0];
+    const head=title ? heads.find(e=>headingMatches(e,title)) : heads[0];
     if (title && !head) return null;
     const element=container.querySelector('#TNContentView');
     if (!element || element.tagName==='VIDEO' || !visible(element)) {
@@ -209,6 +223,87 @@ const VnuLms = (() => {
       .filter(e => visible(e) && !disabled(e) && e.querySelector('i.fa-chevron-down'))
       .map(control => ({control, title:normalize(control.parentElement.querySelector('a')?.textContent)}));
   }
+  function blocker(document,title,visible) {
+    if (!viewerMatches(document,title,visible)) return null;
+    const container=document.getElementById('tnContentView');
+    for(const banner of container.querySelectorAll('h4')) {
+      if(!visible(banner) || banner.closest('#TNContentView'))continue;
+      const message=normalize(banner.textContent);
+      if(/^Nội dung sẽ bắt đầu vào\s*:/iu.test(message))return {kind:'date',message,titles:[]};
+      if(/(?:cần|phải|yêu cầu|vui lòng|hãy).*hoàn thành|hoàn thành.*(?:trước|để)|nội dung.*tiên quyết/iu.test(message)) {
+        // VNU's native relationRequired view is an h4 followed by
+        // div > ul.no-padding > li. Read its labels, never application state.
+        const titles=[...banner.parentElement.querySelectorAll('ul.no-padding > li')].filter(visible).map(titleText).filter(Boolean);
+        return {kind:'prerequisite',message,titles};
+      }
+    }
+    return null;
+  }
+  const availability=(document,title,visible)=>blocker(document,title,visible)?.message || null;
+  function menuSnapshot(document,visible) {
+    const sidebar=document.getElementById('tnContentList');
+    if(!sidebar || !visible(sidebar))return {available:false,items:[],folders:[]};
+    const items=links(sidebar).map(a=>{
+      const path=linkSections(a,sidebar).reverse(),head=a.closest('.__lesson-name,.__lesson-name-child');
+      return {title:titleText(a),path,section:path.at(-1)||null,required:required(a) || !!head && required(head)};
+    });
+    const occurrences=new Map();
+    const controls=[...sidebar.querySelectorAll('.__lesson-name > span.arrow,.__lesson-name-child > span.arrow,[aria-controls][aria-expanded]')]
+      .filter(e=>visible(e) && normalize(e.getAttribute('aria-controls')).split(' ').every(id=>{
+        const target=id && document.getElementById(id);return !target || sidebar.contains(target);
+      }));
+    const folders=controls.filter(e=>!controls.some(other=>other!==e && e.contains(other))).map(control=>{
+        const native=control.matches('span.arrow'),head=native?control.parentElement:control.closest('.__lesson-name,.__lesson-name-child') || control;
+        const label=head.querySelector('a') || (native?null:control),title=titleText(label);
+        const path=[...linkSections(label || head,sidebar).reverse(),titleKey(title)];
+        const identity=JSON.stringify(path),occurrence=(occurrences.get(identity)||0)+1;occurrences.set(identity,occurrence);
+        const wrapper=head.parentElement,controlled=normalize(control.getAttribute('aria-controls')).split(' ')
+          .map(id=>id && document.getElementById(id)).filter(e=>e && sidebar.contains(e));
+        const containers=native?[wrapper]:controlled;
+        return {control,title,path,key:identity+'|'+occurrence,disabled:disabled(control),
+          collapsed:control.getAttribute('aria-expanded')==='false' || !!control.querySelector('i.fa-chevron-down'),
+          hasChildren:containers.some(container=>[...container.querySelectorAll('.__lesson-name,.__lesson-name-child')]
+            .some(e=>e!==head && !head.contains(e) && !!titleText(e.querySelector('a'))))};
+      });
+    return {available:true,items,folders};
+  }
+  function scanMenu(document,visible,now,state) {
+    const snapshot=menuSnapshot(document,visible);
+    if(!snapshot.available)return {...snapshot,kind:'ready',blocked:[],expanded:state.expanded||0};
+    state.attempts??=new Map();state.emptySince??=new Map();state.expanded??=0;
+    const blocked=[];
+    for(const folder of snapshot.folders) {
+      const reason=folder.disabled ? 'Nhánh đang bị khóa; các mục phía trong chưa được xác minh.'
+        : folder.collapsed && state.attempts.has(folder.key) && now-state.attempts.get(folder.key)>=8000
+          ? 'Mũi tên chưa mở sau 8 giây; chưa kiểm tra được các mục phía trong.' : null;
+      if(reason)blocked.push({...folder,control:undefined,reason});
+      else if(!folder.collapsed && !folder.hasChildren) {
+        if(!state.emptySince.has(folder.key))state.emptySince.set(folder.key,now);
+        if(now-state.emptySince.get(folder.key)<8000)return {...snapshot,kind:'waiting',blocked,expanded:state.expanded};
+        blocked.push({...folder,control:undefined,reason:'Nhánh đã mở nhưng chưa có mục con tải ra; chưa thể xác nhận đã kiểm tra hết.'});
+      }
+    }
+    const candidates=snapshot.folders.filter(f=>f.collapsed && !f.disabled && !blocked.some(b=>b.key===f.key));
+    const pending=candidates.find(f=>state.attempts.has(f.key));
+    if(pending)return {...snapshot,kind:'waiting',blocked,expanded:state.expanded};
+    const next=candidates[0];
+    if(next) {
+      state.attempts.set(next.key,now);state.expanded++;state.stableAt=null;
+      next.control.click();return {...snapshot,kind:'expanded',blocked,expanded:state.expanded};
+    }
+    const signature=JSON.stringify([snapshot.items,snapshot.folders.map(f=>[f.key,f.collapsed,f.disabled,f.hasChildren]),blocked.map(b=>b.key)]);
+    if(signature!==state.signature){state.signature=signature;state.stableAt=now;}
+    return {...snapshot,kind:now-state.stableAt>=1000?'ready':'waiting',blocked,expanded:state.expanded};
+  }
+  function unreportedMenuItems(snapshot,report) {
+    const unused=new Set(report.requiredItems);
+    return snapshot.items.filter(it=>it.required).filter(item=>{
+      const row=[...unused].find(row=>titleKey(row.title)===titleKey(item.title) &&
+        (!row.section || item.path.includes(titleKey(row.section))));
+      if(row){unused.delete(row);return false;}return true;
+    });
+  }
+  const sectionNumber = value => titleKey(value).match(/^(?:bài\s+)?(\d+(?:\.\d+)*)(?=[\s.:)]|$)/u)?.[1];
   function openItem(document, title, visible, options = {}) {
     const matches = itemLinks(document, title, options);
     const shown = matches.filter(visible);
@@ -230,14 +325,27 @@ const VnuLms = (() => {
     let control = controls[0];
     if (!control) {
       const folders = collapsedFolders(document, visible);
-      const sectionKey = value => key(value).replace(/^[^\p{L}\p{N}]+/u, '');
-      const preferred = options.section ? folders.filter(f => sectionKey(f.title) === sectionKey(options.section)) : [];
+      // When a hidden link is already mounted, open its own ancestor rather
+      // than a folder elsewhere in the course.
+      const containing=matches.length===1 ? folders.filter(f=>
+        f.control.parentElement.parentElement.contains(matches[0]) &&
+        !f.control.parentElement.contains(matches[0])) : [];
+      const preferred = options.section ? folders.filter(f => titleKey(f.title) === titleKey(options.section)) : [];
       if (preferred.length > 1) return 'ambiguous';
-      control = (preferred[0] || folders[0])?.control;
+      const number=sectionNumber(options.section);
+      const parents=number ? folders.filter(f=>{
+        const candidate=sectionNumber(f.title);
+        return candidate && (candidate===number || number.startsWith(candidate+'.'));
+      }).sort((a,b)=>sectionNumber(b.title).length-sectionNumber(a.title).length) : [];
+      const numbered=parents.filter(f=>sectionNumber(f.title)===sectionNumber(parents[0]?.title));
+      if (!containing.length && !preferred.length && numbered.length>1) return 'ambiguous';
+      control = (containing[0] || preferred[0] || numbered[0] || folders[0])?.control;
     }
     if (control) {
-      if (options.attempted?.has(control)) return 'expanding';
-      options.attempted?.add(control); control.click(); return 'expanded';
+      const label=control.parentElement.querySelector('a'),sidebar=document.getElementById('tnContentList');
+      const path=JSON.stringify([...linkSections(label || control,sidebar).reverse(),titleKey(label),control.getAttribute('aria-controls') || '']);
+      if (options.attempted?.has(control) || options.expandedPaths?.has(path)) return 'expanding';
+      options.attempted?.add(control);options.expandedPaths?.add(path);control.click();return 'expanded';
     }
     return matches.length ? 'hidden' : 'missing';
   }
@@ -245,5 +353,5 @@ const VnuLms = (() => {
     const match = pathname.match(/^\/learn\/lop-hoc\/chi-tiet\/([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})(?:\/|$)/iu);
     return match ? match[1].toLowerCase() : null;
   }
-  return {normalize, key, titleText, titleKey, headingTitle, required, kind, number, progress, firstPending, tabs, tab, links, itemLinks, selected, viewerMatches, pageSnapshot, collapsedFolders, openItem, courseKey};
+  return {normalize, key, titleText, titleKey, headingTitle, headingMatches, required, kind, number, progress, firstPending, tabs, tab, links, itemLinks, selected, viewerMatches, pageSnapshot, collapsedFolders, blocker, availability, menuSnapshot, scanMenu, unreportedMenuItems, openItem, courseKey};
 })();

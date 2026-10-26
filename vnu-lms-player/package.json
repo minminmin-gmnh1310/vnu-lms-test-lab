@@ -1,6 +1,6 @@
 {
   "name": "vnu-lms-player",
-  "version": "0.8.2",
+  "version": "0.8.4",
   "private": true,
   "scripts": {
     "test": "node --test --test-concurrency=1 tests/*.test.cjs",
