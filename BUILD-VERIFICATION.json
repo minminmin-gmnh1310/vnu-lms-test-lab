@@ -9,8 +9,8 @@
     "skipped": 0,
     "cancelled": 0
   },
-  "browserScenarios": "NOT RUN IN BUILD ENVIRONMENT",
-  "githubWorkflow": "NOT TRIGGERED",
+  "browserScenarios": "UPDATED SCENARIOS NOT RUN; user CI 1.0.0 pipeline PASSED, controls FAILED at visibility prerequisite",
+  "githubWorkflow": "User-supplied CI artifact inspected; updated workflow NOT TRIGGERED",
   "realVnuServerTested": false,
   "runtimeVersion": "0.8.2",
   "runtimeHashes": {
@@ -20,5 +20,17 @@
     "player.js": "9dca4db94d1332bbe9ee2e5d0aa928a6dddba4efa9acb71bccacfbb2fc45c6ac"
   },
   "shortLessonRequiredSeconds": 1.5,
-  "videoClipSeconds": 4
+  "videoClipSeconds": 4,
+  "labVersion": "1.0.1",
+  "previousCi": {
+    "artifact": "VNU-LMS-test-results.zip",
+    "browser": "156.0.8078.4",
+    "os": "linux",
+    "node": "v24.21.0",
+    "startedAt": "2026-10-26T03:01:35.988Z",
+    "unitPassed": 304,
+    "pipeline": "passed, 7/7 required, visits [2,3,4,5,6,7], submissions 0",
+    "controls": "failed: visibilityState did not become hidden within 10s",
+    "fix": "Disable Playwright focus emulation in separate visibility scenario; original runtime scripts unchanged"
+  }
 }
